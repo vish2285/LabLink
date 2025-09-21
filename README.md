@@ -24,24 +24,25 @@ Built with **React (Vite)** + **FastAPI** + **Postgres/SQLite**.
 ---
 
 ## 🏗️ Project Structure
+
 researchmatch/
 ├─ backend/
-│ ├─ app/
-│ │ ├─ main.py
-│ │ ├─ models.py
-│ │ ├─ crud.py
-│ │ ├─ match.py
-│ │ └─ scrape_seed.py
-│ ├─ requirements.txt
-│ └─ README.md
+│  ├─ app/
+│  │  ├─ main.py
+│  │  ├─ models.py
+│  │  ├─ crud.py
+│  │  ├─ match.py
+│  │  └─ scrape_seed.py
+│  ├─ requirements.txt
+│  └─ README.md
 ├─ frontend/
-│ ├─ src/
-│ │ ├─ App.jsx
-│ │ ├─ pages/
-│ │ │ ├─ ProfileForm.jsx
-│ │ │ ├─ Results.jsx
-│ │ │ └─ EmailEditor.jsx
-│ │ └─ api.js
-│ ├─ package.json
-│ └─ README.md
+│  ├─ src/
+│  │  ├─ App.jsx
+│  │  ├─ pages/
+│  │  │  ├─ ProfileForm.jsx
+│  │  │  ├─ Results.jsx
+│  │  │  └─ EmailEditor.jsx
+│  │  └─ api.js
+│  ├─ package.json
+│  └─ README.md
 └─ README.md
