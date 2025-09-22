@@ -19,33 +19,31 @@ export default function Results() {
 
   if (!results?.length) {
     return (
-      <div className="space-y-4">
+      <div className="mx-auto w-full max-w-3xl text-center space-y-2">
         <p>No results yet.</p>
-        <Link to="/" className="text-blue-600 underline">Go back to profile</Link>
+        <Link to="/" className="text-blue-600 underline inline-block">Go back to profile</Link>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="mx-auto w-full max-w-3xl text-center">
         <h1 className="text-xl font-semibold">Top Matches</h1>
-        <Link to="/" className="text-sm text-blue-600 hover:underline">Edit profile</Link>
+        <Link to="/" className="mt-1 inline-block text-sm text-blue-600 hover:underline">Edit profile</Link>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mx-auto w-full max-w-3xl grid gap-4">
         {results.map((p, i) => (
-          <div key={i} className="rounded-xl border bg-white p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-medium">{p.name}</p>
-                {p.department && <p className="text-sm text-gray-600">{p.department}</p>}
-              </div>
-              <span className="rounded bg-blue-50 px-2 py-0.5 text-xs text-blue-700">Match</span>
+          <div key={i} className="rounded-xl border bg-white p-4 shadow-sm text-center">
+            <div className="space-y-1">
+              <p className="font-medium">{p.name}</p>
+              {p.department && <p className="text-sm text-gray-600">{p.department}</p>}
+              <span className="mx-auto inline-block rounded bg-blue-50 px-2 py-0.5 text-xs text-blue-700">Match</span>
             </div>
             {!!p.interests?.length && (
               <p className="mt-2 line-clamp-2 text-sm text-gray-700">{p.interests.join(', ')}</p>
             )}
-            <div className="mt-3 flex justify-end">
+            <div className="mt-3 flex justify-center">
               <button
                 className="rounded-lg bg-[#002855] px-3 py-1.5 text-sm text-white shadow hover:opacity-90"
                 onClick={() => handleSelect(i)}

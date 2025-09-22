@@ -11,7 +11,7 @@ export default function EmailEditor() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border bg-white p-6 shadow-sm">
+      <div className="mx-auto w-full max-w-3xl rounded-xl border bg-white p-6 shadow-sm">
         {!selectedProfessor && (
           <p className="text-sm text-gray-600">No professor selected. <Link to="/results" className="text-blue-600 underline">Go to results</Link></p>
         )}
@@ -23,7 +23,7 @@ export default function EmailEditor() {
           <div>
             <label className="block text-sm font-medium">Body</label>
             <textarea
-              className="mt-1 h-64 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 h-[24rem] w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={emailDraft}
               onChange={e => setEmailDraft(e.target.value)}
             />

@@ -47,6 +47,7 @@ def load_professors() -> List[Dict[str, Any]]:
         p.setdefault("recent_publications", [])
     return data
 
+# Load professors data at startup for reuse in API handlers
 PROFESSORS: List[Dict[str, Any]] = load_professors()
 
 # ------------------------ Models ------------------------

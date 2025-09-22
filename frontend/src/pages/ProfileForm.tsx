@@ -47,11 +47,11 @@ export default function ProfileForm() {
 
   return (
     <div className="space-y-6" id="profile">
-      <div className="rounded-xl border bg-white p-6 shadow-sm">
+      <div className="mx-auto w-full max-w-3xl rounded-xl border bg-white p-6 shadow-sm text-center">
         <h1 className="text-xl font-semibold">Your Research Profile</h1>
         <p className="mt-1 text-sm text-gray-600">Add interests and skills to find matching UC Davis professors.</p>
-        <form onSubmit={onSubmit} className="mt-5 grid gap-5 sm:grid-cols-2">
-          <div className="sm:col-span-1">
+        <form onSubmit={onSubmit} className="mt-5 grid gap-5 justify-items-center">
+          <div className="w-full max-w-md">
             <label className="block text-sm font-medium">Department</label>
             <select
               className="mt-1 w-full rounded-lg border px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -64,7 +64,7 @@ export default function ProfileForm() {
               ))}
             </select>
           </div>
-          <div className="sm:col-span-1">
+          <div className="w-full max-w-md">
             <label className="block text-sm font-medium">Interests</label>
             <input
               className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -74,7 +74,7 @@ export default function ProfileForm() {
             />
             <p className="mt-1 text-xs text-gray-500">Comma separated</p>
           </div>
-          <div className="sm:col-span-1">
+          <div className="w-full max-w-md">
             <label className="block text-sm font-medium">Skills</label>
             <input
               className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -84,8 +84,8 @@ export default function ProfileForm() {
             />
             <p className="mt-1 text-xs text-gray-500">Comma separated</p>
           </div>
-          {error && <p className="sm:col-span-2 text-sm text-red-600">{error}</p>}
-          <div className="sm:col-span-2">
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <div className="flex justify-center w-full">
             <button
               type="submit"
               className="rounded-lg bg-[#002855] px-5 py-2.5 text-white shadow hover:opacity-90 disabled:opacity-60"
