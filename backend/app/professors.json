@@ -1,0 +1,414 @@
+[
+  {
+    "name": "Zhaojun Bai",
+    "department": "Computer Science, Mathematics",
+    "email": "bai@cs.ucdavis.edu",
+    "research_interests": "Computational mathematics; numerical linear algebra; mathematical software; high-performance computing.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/zhaojun-bai"
+  },
+  {
+    "name": "Matt Bishop",
+    "department": "Computer Science",
+    "email": "mabishop@ucdavis.edu",
+    "research_interests": "Computer security; vulnerability analysis; access control; intrusion detection; elections security; insider threat; security education.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/matt-bishop"
+  },
+  {
+    "name": "Hao Chen",
+    "department": "Computer Science",
+    "email": "chen@ucdavis.edu",
+    "research_interests": "Software and systems security; ML security; mobile/wireless security; security verification.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/hao-chen"
+  },
+  {
+    "name": "Muhao Chen",
+    "department": "Computer Science",
+    "email": "muhchen@ucdavis.edu",
+    "research_interests": "NLP; robust and minimally supervised learning; accountability and security of LLMs; trustworthy ML.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/muhao-chen"
+  },
+  {
+    "name": "Raissa M. D’Souza",
+    "department": "Computer Science, Mechanical and Aerospace Engineering",
+    "email": "rmdsouza@ucdavis.edu",
+    "research_interests": "Complex networks; cascading failures; percolation; interdisciplinary network science.",
+    "recent_publications": [],
+    "profile_link": "https://faculty.engineering.ucdavis.edu/dsouza/"
+  },
+  {
+    "name": "Ian Davidson",
+    "department": "Computer Science",
+    "email": "davidson@cs.ucdavis.edu",
+    "research_interests": "AI/ML and data mining; explainable and fair AI; neuro-symbolic AI; meta-learning.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/ian-davidson"
+  },
+  {
+    "name": "David Doty",
+    "department": "Computer Science",
+    "email": "doty@ucdavis.edu",
+    "research_interests": "Molecular computing; DNA self-assembly; chemical reaction networks; theory of computation.",
+    "recent_publications": [],
+    "profile_link": "https://web.cs.ucdavis.edu/~doty/"
+  },
+  {
+    "name": "Kurt Eiselt",
+    "department": "Computer Science",
+    "email": "eiselt@ucdavis.edu",
+    "research_interests": "CS education; inclusive pedagogy; accessibility in computing; K–12 outreach.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/kurt-eiselt"
+  },
+  {
+    "name": "Matthew Farrens",
+    "department": "Computer Science",
+    "email": "farrens@cs.ucdavis.edu",
+    "research_interests": "Computer architecture; interconnects; memory systems; instruction-level parallelism; high-speed scientific computing.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/matthew-farrens"
+  },
+  {
+    "name": "Vladimir Filkov",
+    "department": "Computer Science",
+    "email": "filkov@cs.ucdavis.edu",
+    "research_interests": "Empirical software engineering; AI/ML for software processes; OSS ecosystems; applied network science.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/vladimir-filkov"
+  },
+  {
+    "name": "Alexander Gamero-Garrido",
+    "department": "Computer Science",
+    "email": "agamerog@ucdavis.edu",
+    "research_interests": "Computer networks; Internet measurement; online privacy; censorship; Internet policy.",
+    "recent_publications": [
+      {
+        "title": "Empirically Measuring Data Localization in the EU",
+        "abstract": null,
+        "year": 2025,
+        "link": "https://www.gamero-garrido.com/publications/"
+      },
+      {
+        "title": "FP-Inconsistent: Detecting Evasive Bots using Browser Fingerprint Inconsistencies",
+        "abstract": null,
+        "year": 2025,
+        "link": "https://www.gamero-garrido.com/publications/"
+      }
+    ],
+    "profile_link": "https://cs.ucdavis.edu/directory/alexander-gamero-garrido-0"
+  },
+  {
+    "name": "Dipak Ghosal",
+    "department": "Computer Science",
+    "email": "ghosal@cs.ucdavis.edu",
+    "research_interests": "Computer networks; wireless/mobile networking; sensor networks; multimedia networking.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/dipak-ghosal"
+  },
+  {
+    "name": "François Gygi",
+    "department": "Computer Science",
+    "email": null,
+    "research_interests": "High-performance computing; computational materials; electronic structure; large-scale parallel simulation.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/francois-gygi"
+  },
+  {
+    "name": "Lifu Huang",
+    "department": "Computer Science",
+    "email": "lfuhuang@ucdavis.edu",
+    "research_interests": "NLP; information extraction; knowledge representation; trustworthy and explainable AI.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/lifu-huang"
+  },
+  {
+    "name": "Isaac Kim",
+    "department": "Computer Science",
+    "email": "ikekim@ucdavis.edu",
+    "research_interests": "Quantum information; quantum error correction; topological phases; condensed matter theory.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/isaac-kim"
+  },
+  {
+    "name": "Sam King",
+    "department": "Computer Science",
+    "email": "kingst@ucdavis.edu",
+    "research_interests": "Computer security; operating systems; trustworthy computing; privacy systems.",
+    "recent_publications": [
+      {
+        "title": "Aragorn: A Privacy-Enhancing System for Mobile Cameras",
+        "abstract": null,
+        "year": 2024,
+        "link": "https://bob.cs.ucdavis.edu/publications.html"
+      }
+    ],
+    "profile_link": "https://cs.ucdavis.edu/directory/sam-king"
+  },
+  {
+    "name": "Patrice Koehl",
+    "department": "Computer Science",
+    "email": "pakoehl@ucdavis.edu",
+    "research_interests": "Structural bioinformatics; protein modeling; computational biology; algorithms for molecular biology.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/patrice-koehl"
+  },
+  {
+    "name": "Greg Kuperberg",
+    "department": "Mathematics, Computer Science",
+    "email": "greg@math.ucdavis.edu",
+    "research_interests": "Quantum computing; topology; combinatorics; mathematical aspects of CS.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/greg-kuperberg"
+  },
+  {
+    "name": "Jasper Lee",
+    "department": "Computer Science",
+    "email": "jasperlee@ucdavis.edu",
+    "research_interests": "Programming languages; software engineering; automated debugging; program analysis.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/jasper-lee"
+  },
+  {
+    "name": "Dongyu Liu",
+    "department": "Computer Science",
+    "email": "dyuliu@ucdavis.edu",
+    "research_interests": "Computer vision; machine learning; multimodal AI; human-centric vision.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/dongyu-liu"
+  },
+  {
+    "name": "Xin Liu",
+    "department": "Computer Science",
+    "email": null,
+    "research_interests": "Cyber-physical systems; wireless networks; energy systems; mobile/ubiquitous computing.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/xin-liu"
+  },
+  {
+    "name": "Jason Lowe-Power",
+    "department": "Computer Science",
+    "email": "jlowepower@ucdavis.edu",
+    "research_interests": "Computer architecture; OS; HW/SW co-design; simulation infrastructure (gem5).",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/jason-lowe-power"
+  },
+  {
+    "name": "Kwan-Liu Ma",
+    "department": "Computer Science",
+    "email": "ma@cs.ucdavis.edu",
+    "research_interests": "Visualization; visual analytics; graphics; HCI; high-performance visual computing.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/kwan-liu-ma"
+  },
+  {
+    "name": "Joshua McCoy",
+    "department": "Computer Science, Cinema and Digital Media",
+    "email": "jamccoy@ucdavis.edu",
+    "research_interests": "Computational media; games; interactive storytelling; learning technologies.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/joshua-mccoy"
+  },
+  {
+    "name": "Slobodan Mitrović",
+    "department": "Computer Science",
+    "email": "smitrovic@ucdavis.edu",
+    "research_interests": "Algorithms; data structures; fine-grained complexity; lower bounds; theory of computation.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/slobodan-mitrovic"
+  },
+  {
+    "name": "Michael Neff",
+    "department": "Computer Science, Cinema and Digital Media",
+    "email": "mpneff@ucdavis.edu",
+    "research_interests": "Graphics; animation; character simulation; human motion; VR.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/michael-neff"
+  },
+  {
+    "name": "Christopher Nitta",
+    "department": "Computer Science",
+    "email": "cjnitta@ucdavis.edu",
+    "research_interests": "CS education; operating systems; software development practices; systems programming.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/christopher-nitta"
+  },
+  {
+    "name": "Randall O’Reilly",
+    "department": "Psychology, Computer Science, Center for Neuroscience",
+    "email": "oreilly@ucdavis.edu",
+    "research_interests": "Computational cognitive neuroscience; learning & memory; biologically inspired neural networks.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/randall-oreilly"
+  },
+  {
+    "name": "Tapti Palit",
+    "department": "Computer Science",
+    "email": "tpalit@ucdavis.edu",
+    "research_interests": "Computer/storage systems; operating systems; performance & reliability of large-scale data systems.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/tapti-palit"
+  },
+  {
+    "name": "Julian Panetta",
+    "department": "Computer Science",
+    "email": "jpanetta@ucdavis.edu",
+    "research_interests": "Geometry processing; computational mechanics; graphics; design & simulation of physical systems.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/julian-panetta"
+  },
+  {
+    "name": "Hamed Pirsiavash",
+    "department": "Computer Science",
+    "email": "hpirsiav@ucdavis.edu",
+    "research_interests": "Computer vision; deep learning; robustness & efficiency; trustworthy AI.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/hamed-pirsiavash"
+  },
+  {
+    "name": "Joël Porquet-Lupine",
+    "department": "Computer Science",
+    "email": "jporquet@ucdavis.edu",
+    "research_interests": "Computer architecture; embedded systems; computer organization pedagogy.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/joel-porquet-lupine"
+  },
+  {
+    "name": "Setareh Rafatirad",
+    "department": "Computer Science",
+    "email": "srafatirad@ucdavis.edu",
+    "research_interests": "IoT systems; embedded systems security; reconfigurable computing; CS education.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/setareh-rafatirad"
+  },
+  {
+    "name": "Amanda Raybuck",
+    "department": "Computer Science",
+    "email": "araybuck@ucdavis.edu",
+    "research_interests": "Programming languages; type systems; compilers; program verification; CS pedagogy.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/amanda-raybuck"
+  },
+  {
+    "name": "Cindy Rubio González",
+    "department": "Computer Science",
+    "email": "crubio@ucdavis.edu",
+    "research_interests": "Software engineering; programming languages; program analysis; reliability; testing & debugging.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/cindy-rubio-gonzalez"
+  },
+  {
+    "name": "Mohammad Sadoghi",
+    "department": "Computer Science",
+    "email": "msadoghi@ucdavis.edu",
+    "research_interests": "Database systems; distributed systems; blockchain; secure & dependable data management; high-performance transactions.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/mohammad-sadoghi"
+  },
+  {
+    "name": "Zubair Shafiq",
+    "department": "Computer Science",
+    "email": "zshafiq@ucdavis.edu",
+    "research_interests": "Internet measurements; online tracking and ads; browser/privacy; network security; web transparency.",
+    "recent_publications": [
+      {
+        "title": "Big Help or Big Brother? Auditing Tracking, Profiling, and Personalization in Generative AI Assistants",
+        "abstract": null,
+        "year": 2025,
+        "link": "https://web.cs.ucdavis.edu/~zubair/pubs.html"
+      },
+      {
+        "title": "FP-Inconsistent: Detecting Evasive Bots using Browser Fingerprint Inconsistencies",
+        "abstract": null,
+        "year": 2025,
+        "link": "https://web.cs.ucdavis.edu/~zubair/pubs.html"
+      }
+    ],
+    "profile_link": "https://cs.ucdavis.edu/directory/zubair-shafiq"
+  },
+  {
+    "name": "Maike Sonnewald",
+    "department": "Computer Science",
+    "email": "sonnewald@ucdavis.edu",
+    "research_interests": "Computational climate & ocean science; ML for Earth systems; sustainable computing.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/maike-sonnewald"
+  },
+  {
+    "name": "Caleb Stanford",
+    "department": "Computer Science",
+    "email": "cdstanford@ucdavis.edu",
+    "research_interests": "Formal methods; verification; logic & PL; trustworthy AI.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/caleb-stanford"
+  },
+  {
+    "name": "Ilias Tagkopoulos",
+    "department": "Computer Science, Genome Center",
+    "email": null,
+    "research_interests": "Systems biology; computational modeling; AI for health & agriculture; bioinformatics.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/ilias-tagkopoulos"
+  },
+  {
+    "name": "Aditya Thakur",
+    "department": "Computer Science",
+    "email": "avthakur@ucdavis.edu",
+    "research_interests": "Programming languages; formal methods; program analysis; automated reasoning; security.",
+    "recent_publications": [
+      {
+        "title": "Provable Editing of Deep Neural Networks using Parametric Linear Relaxation",
+        "abstract": null,
+        "year": 2024,
+        "link": "https://thakur.cs.ucdavis.edu/publications.html"
+      },
+      {
+        "title": "Towards Verifying Exact Conditions of Density Functional Theory Approximations",
+        "abstract": null,
+        "year": 2024,
+        "link": "https://thakur.cs.ucdavis.edu/publications.html"
+      },
+      {
+        "title": "Provable Repair of Vision Transformers",
+        "abstract": null,
+        "year": 2024,
+        "link": "https://thakur.cs.ucdavis.edu/publications.html"
+      }
+    ],
+    "profile_link": "https://cs.ucdavis.edu/directory/aditya-thakur"
+  },
+  {
+    "name": "Hao-Chuan Wang",
+    "department": "Computer Science",
+    "email": "hciwang@ucdavis.edu",
+    "research_interests": "HCI; CSCW; social computing; conversational agents.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/hao-chuan-wang"
+  },
+  {
+    "name": "Jiawei Zhang",
+    "department": "Computer Science",
+    "email": "jiwzhang@ucdavis.edu",
+    "research_interests": "Data mining; graph mining; recommender systems; social network analysis; deep learning on graphs.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/jiawei-zhang"
+  },
+  {
+    "name": "Zhe Zhao",
+    "department": "Computer Science",
+    "email": "zao@ucdavis.edu",
+    "research_interests": "Programming languages; compilers; program analysis; systems.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/zhe-zhao"
+  },
+  {
+    "name": "Yang Zhou",
+    "department": "Computer Science",
+    "email": "yayzhou@ucdavis.edu",
+    "research_interests": "Machine learning; NLP; trustworthy AI; data-centric decision making.",
+    "recent_publications": [],
+    "profile_link": "https://cs.ucdavis.edu/directory/yang-zhou"
+  }
+]
