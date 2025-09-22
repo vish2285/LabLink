@@ -6,6 +6,12 @@ export async function fetchProfessors(): Promise<Professor[]> {
   return res.json()
 }
 
+export async function fetchDepartments(): Promise<string[]> {
+  const res = await fetch('/api/departments')
+  if (!res.ok) throw new Error('Failed to load departments')
+  return res.json()
+}
+
 export async function matchProfessors(profile: StudentProfile): Promise<MatchResult[]> {
   const res = await fetch('/api/match', {
     method: 'POST',

@@ -34,6 +34,13 @@ def list_professors():
     return PROFESSORS
 
 
+@app.get("/api/departments")
+def list_departments():
+    # Return sorted unique list of departments present in the dataset
+    departments = sorted({(p.get("department") or "").strip() for p in PROFESSORS if p.get("department")})
+    return departments
+
+
 @app.post("/api/match")
 def match(profile: dict):
     # Placeholder matching: return top 10

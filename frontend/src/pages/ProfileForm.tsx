@@ -8,6 +8,19 @@ export default function ProfileForm() {
   const { setProfile, setResults } = useApp()
   const [interests, setInterests] = useState('')
   const [skills, setSkills] = useState('')
+  const [department, setDepartment] = useState('')
+  const [departments] = useState<string[]>([
+    'Computer Science',
+    'Electrical and Computer Engineering',
+    'Mechanical Engineering',
+    'Civil and Environmental Engineering',
+    'Biomedical Engineering',
+    'Mathematics',
+    'Statistics',
+    'Physics',
+    'Chemistry',
+    'Biology',
+  ])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -19,6 +32,7 @@ export default function ProfileForm() {
       const payload = {
         interests: interests.split(',').map(s => s.trim()).filter(Boolean),
         skills: skills.split(',').map(s => s.trim()).filter(Boolean),
+        department: department || undefined,
       }
       setProfile(payload)
       const results = await matchProfessors(payload)
@@ -32,36 +46,56 @@ export default function ProfileForm() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Your Research Profile</h1>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium">Interests (comma separated)</label>
-          <input
-            className="mt-1 w-full rounded border px-3 py-2"
-            value={interests}
-            onChange={e => setInterests(e.target.value)}
-            placeholder="machine learning, systems, NLP"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Skills (comma separated)</label>
-          <input
-            className="mt-1 w-full rounded border px-3 py-2"
-            value={skills}
-            onChange={e => setSkills(e.target.value)}
-            placeholder="python, pytorch, rust"
-          />
-        </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-60"
-          disabled={loading}
-        >
-          {loading ? 'Matching…' : 'Find Matches'}
-        </button>
-      </form>
+    <div className="space-y-6" id="profile">
+      <div className="rounded-xl border bg-white p-6 shadow-sm">
+        <h1 className="text-xl font-semibold">Your Research Profile</h1>
+        <p className="mt-1 text-sm text-gray-600">Add interests and skills to find matching UC Davis professors.</p>
+        <form onSubmit={onSubmit} className="mt-5 grid gap-5 sm:grid-cols-2">
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium">Department</label>
+            <select
+              className="mt-1 w-full rounded-lg border px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={department}
+              onChange={e => setDepartment(e.target.value)}
+            >
+              <option value="" disabled>Select a department</option>
+              {departments.map(dep => (
+                <option key={dep} value={dep}>{dep}</option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium">Interests</label>
+            <input
+              className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={interests}
+              onChange={e => setInterests(e.target.value)}
+              placeholder="machine learning, systems, NLP"
+            />
+            <p className="mt-1 text-xs text-gray-500">Comma separated</p>
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium">Skills</label>
+            <input
+              className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={skills}
+              onChange={e => setSkills(e.target.value)}
+              placeholder="python, pytorch, rust"
+            />
+            <p className="mt-1 text-xs text-gray-500">Comma separated</p>
+          </div>
+          {error && <p className="sm:col-span-2 text-sm text-red-600">{error}</p>}
+          <div className="sm:col-span-2">
+            <button
+              type="submit"
+              className="rounded-lg bg-[#002855] px-5 py-2.5 text-white shadow hover:opacity-90 disabled:opacity-60"
+              disabled={loading}
+            >
+              {loading ? 'Matching…' : 'Find Matches'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

@@ -28,26 +28,34 @@ export default function Results() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Top Matches</h1>
-      <ul className="divide-y rounded border bg-white">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Top Matches</h1>
+        <Link to="/" className="text-sm text-blue-600 hover:underline">Edit profile</Link>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {results.map((p, i) => (
-          <li key={i} className="p-4 flex items-start justify-between gap-4">
-            <div>
-              <p className="font-medium">{p.name}</p>
-              {p.department && <p className="text-sm text-gray-600">{p.department}</p>}
-              {!!p.interests?.length && (
-                <p className="mt-1 text-sm text-gray-700">{p.interests.join(', ')}</p>
-              )}
+          <div key={i} className="rounded-xl border bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-medium">{p.name}</p>
+                {p.department && <p className="text-sm text-gray-600">{p.department}</p>}
+              </div>
+              <span className="rounded bg-blue-50 px-2 py-0.5 text-xs text-blue-700">Match</span>
             </div>
-            <button
-              className="shrink-0 rounded bg-blue-600 px-3 py-1.5 text-white"
-              onClick={() => handleSelect(i)}
-            >
-              Draft Email
-            </button>
-          </li>
+            {!!p.interests?.length && (
+              <p className="mt-2 line-clamp-2 text-sm text-gray-700">{p.interests.join(', ')}</p>
+            )}
+            <div className="mt-3 flex justify-end">
+              <button
+                className="rounded-lg bg-[#002855] px-3 py-1.5 text-sm text-white shadow hover:opacity-90"
+                onClick={() => handleSelect(i)}
+              >
+                Draft Email
+              </button>
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   )
 }
