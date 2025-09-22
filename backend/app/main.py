@@ -23,6 +23,9 @@ def load_data():
         data = json.load(f)
     return data
 
+# Load professors data at startup for reuse in API handlers
+PROFESSORS = load_data()
+
 @app.get('/view')
 def view():
     data = load_data()
