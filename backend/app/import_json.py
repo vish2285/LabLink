@@ -1,0 +1,1 @@
+# 📥 Script to import professor data from professors.json into the database.
