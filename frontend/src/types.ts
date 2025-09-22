@@ -4,6 +4,7 @@ export type Professor = {
   department?: string;
   interests?: string[];
   publications?: string[];
+  email?: string;
 };
 
 export type StudentProfile = {
