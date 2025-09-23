@@ -6,7 +6,7 @@ import os
 
 from .database import Base, engine, get_db
 from . import crud
-from .schema import (
+from .schemas import (
     ProfessorOut, PublicationOut, StudentProfileIn,
     MatchResponse, MatchItem, EmailRequest, EmailDraft
 )
@@ -43,7 +43,6 @@ def rebuild_vectorstore(db: Session):
     for p in profs:
         skills = [ps.skill.name for ps in p.professor_skills]
         pubs = [{"title": d.title, "abstract": d.abstract, "year": d.year, "link": d.link} for d in p.publications]
-
         payloads.append({
             "research_interests": p.research_interests or "",
             "recent_publications": pubs,
@@ -64,7 +63,6 @@ def pct(x: float) -> float: return round(clamp01(x) * 100.0, 2)
 def to_prof_out(p) -> ProfessorOut:
     skills = [ps.skill.name for ps in p.professor_skills]
     pubs = [PublicationOut(title=d.title, abstract=d.abstract, year=d.year, link=d.link) for d in p.publications]
-
     return ProfessorOut(
         id=p.id, name=p.name, department=p.department, email=p.email,
         research_interests=p.research_interests, profile_link=p.profile_link,
@@ -105,80 +103,68 @@ def match_professors(
     w_pubs: float = Query(0.10, ge=0.0, le=1.0),
     db: Session = Depends(get_db)
 ):
-    try:
-        if not profile.interests.strip() and not (profile.skills or "").strip():
-            raise HTTPException(400, "Provide at least interests or skills")
+    if not profile.interests.strip() and not (profile.skills or "").strip():
+        raise HTTPException(400, "Provide at least interests or skills")
 
-        # normalize weights
-        total = max(1e-9, w_interests + w_skills + w_pubs)
-        w_interests, w_skills, w_pubs = w_interests/total, w_skills/total, w_pubs/total
+    # normalize weights
+    total = max(1e-9, w_interests + w_skills + w_pubs)
+    w_interests, w_skills, w_pubs = w_interests/total, w_skills/total, w_pubs/total
 
-        # department filter first
-        profs = crud.list_professors(db, department)
-        if not profs:
-            return MatchResponse(student_query="", department=department or "", weights={
-                "interests": w_interests, "skills": w_skills, "pubs": w_pubs
-            }, matches=[])
+    # department filter first
+    profs = crud.list_professors(db, department)
+    if not profs:
+        return MatchResponse(student_query="", department=department or "", weights={
+            "interests": w_interests, "skills": w_skills, "pubs": w_pubs
+        }, matches=[])
 
-        # prepare vector similarities once
-        query_text = f"{profile.interests} {profile.skills or ''}".strip()
-        sims = VECSTORE.sims(query_text) if VECSTORE else [0.0] * len(PROF_IDS)
+    # prepare vector similarities once
+    query_text = f"{profile.interests} {profile.skills or ''}".strip()
+    sims = VECSTORE.sims(query_text) if VECSTORE else [0.0] * len(PROF_IDS)
 
-        # map professor id -> sim (since VECSTORE order is all profs, not filtered)
-        id_to_sim = {pid: sims[i] for i, pid in enumerate(PROF_IDS)}
+    # map professor id -> sim (since VECSTORE order is all profs, not filtered)
+    id_to_sim = {pid: sims[i] for i, pid in enumerate(PROF_IDS)}
 
-        # student skills
-        student_skills = extract_skills(profile.skills or "")
-        interest_tokens = [t for t in tokenize(profile.interests) if len(t) > 2][:12]
+    # student skills
+    student_skills = extract_skills(profile.skills or "")
+    interest_tokens = [t for t in tokenize(profile.interests) if len(t) > 2][:12]
 
-        scored = []
-        for p in profs:
-            sim_interests = clamp01(id_to_sim.get(p.id, 0.0))
+    scored = []
+    for p in profs:
+        sim_interests = clamp01(id_to_sim.get(p.id, 0.0))
 
-            prof_skills = [ps.skill.name for ps in p.professor_skills]
-            jac, skill_hits = jaccard(student_skills, prof_skills)
+        prof_skills = [ps.skill.name for ps in p.professor_skills]
+        jac, skill_hits = jaccard(student_skills, prof_skills)
 
-            pubs_list = [{"title": d.title, "abstract": d.abstract, "year": d.year, "link": d.link} for d in p.publications]
+        pubs_list = [{"title": d.title, "abstract": d.abstract, "year": d.year, "link": d.link} for d in p.publications]
+        pub_base, pub_hits, bonus = pubs_score(interest_tokens, pubs_list)
 
-            pub_base, pub_hits, bonus = pubs_score(interest_tokens, pubs_list)
+        base = (w_interests * sim_interests) + (w_skills * jac) + (w_pubs * pub_base)
+        final = clamp01(base * bonus)
 
-            base = (w_interests * sim_interests) + (w_skills * jac) + (w_pubs * pub_base)
-            final = clamp01(base * bonus)
+        why = {
+            "interests_hits": interest_tokens[:6],
+            "skills_hits": skill_hits[:6],
+            "pubs_hits": pub_hits[:6]
+        }
+        scored.append((final, len(skill_hits), -p.id, p, why))
 
-            why = {
-                "interests_hits": interest_tokens[:6],
-                "skills_hits": skill_hits[:6],
-                "pubs_hits": pub_hits[:6]
-            }
-            scored.append((final, len(skill_hits), -p.id, p, why))
+    scored.sort(reverse=True, key=lambda x: (x[0], x[1], x[2]))
 
-        scored.sort(reverse=True, key=lambda x: (x[0], x[1], x[2]))
+    matches = []
+    for final, _, __, p, why in scored[:top_k]:
+        matches.append(MatchItem(
+            score=round(final, 6),
+            score_percent=pct(final),
+            why=why,
+            professor=to_prof_out(p)
+        ))
 
-        matches = []
-        for final, _, __, p, why in scored[:top_k]:
-            matches.append(MatchItem(
-                score=round(final, 6),
-                score_percent=pct(final),
-                why=why,
-                professor=to_prof_out(p)
-            ))
-
-        return MatchResponse(
-            student_query=query_text,
-            department=department or "",
-            weights={"interests": w_interests, "skills": w_skills, "pubs": w_pubs},
-            matches=matches
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        # Never crash the server; return empty matches with the query context
-        return MatchResponse(
-            student_query=f"{(profile.interests or '').strip()} {(profile.skills or '').strip()}".strip(),
-            department=department or "",
-            weights={"interests": w_interests, "skills": w_skills, "pubs": w_pubs},
-            matches=[]
-        )
+    return MatchResponse(
+        student_query=query_text,
+        department=department or "",
+        weights={"interests": w_interests, "skills": w_skills, "pubs": w_pubs},
+        matches=matches
+    )
 
 @app.post("/api/email/generate", response_model=EmailDraft)
 def email_generate(req: EmailRequest):
