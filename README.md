@@ -15,7 +15,7 @@ Built with **React (Vite)** + **FastAPI** + **Postgres/SQLite**.
 ---
 
 ## 🗂 Tech Stack
-- **Frontend**: React + Vite, TailwindCSS  
+- **Frontend**: React + Vite + TypeScript, TailwindCSS  
 - **Backend**: FastAPI, Python, scikit-learn (TF-IDF), SQLAlchemy  
 - **Database**: SQLite (dev), Postgres (prod)  
 - **Optional AI**: OpenAI embeddings + LLM for polished emails  
@@ -26,15 +26,20 @@ Built with **React (Vite)** + **FastAPI** + **Postgres/SQLite**.
 ## 🏗️ Project Structure
 
 researchmatch/
-├─ backend/
-│  ├─ app/
-│  │  ├─ main.py
-│  │  ├─ models.py
-│  │  ├─ crud.py
-│  │  ├─ match.py
-│  │  └─ scrape_seed.py
-│  ├─ requirements.txt
-│  └─ README.md
+|─ backend/
+|  ├─ app/
+|  │  ├─ __init__.py         # marks app/ as a Python package
+|  │  ├─ main.py             # 🚀 FastAPI entry point (routes, CORS, app startup)
+|  │  ├─ database.py         # ⚙️ SQLAlchemy DB engine + session setup
+|  │  ├─ models.py           # 🗄️ SQLAlchemy models (Professor, Student, Match tables)
+|  │  ├─ crud.py             # 🛠️ CRUD functions (create student, list professors, etc.)
+|  │  ├─ match.py            # 🔍 Matching engine (TF-IDF / embeddings)
+|  │  ├─ import_json.py      # 📥 Seeder script to load professors.json into DB
+|  │  └─ professors.json     # 📑 Seed dataset with professors + publications
+|  │
+|  ├─ requirements.txt       # 📦 Backend dependencies (FastAPI, SQLAlchemy, scikit-learn, etc.)
+|  ├─ venv/                  # (local only) Python virtual environment
+|  └─ professors.db          # (generated) SQLite DB file after first run
 ├─ frontend/
 │  ├─ src/
 │  │  ├─ App.jsx
