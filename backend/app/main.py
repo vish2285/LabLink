@@ -6,7 +6,7 @@ import os
 
 from .database import Base, engine, get_db
 from . import crud
-from .schemas import (
+from .schema import (
     ProfessorOut, PublicationOut, StudentProfileIn,
     MatchResponse, MatchItem, EmailRequest, EmailDraft
 )
