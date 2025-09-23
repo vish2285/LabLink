@@ -32,10 +32,9 @@ export default function ProfileForm() {
       const payload = {
         interests: interests.split(',').map(s => s.trim()).filter(Boolean),
         skills: skills.split(',').map(s => s.trim()).filter(Boolean),
-        department: department || undefined,
       }
       setProfile(payload)
-      const results = await matchProfessors(payload)
+      const results = await matchProfessors(payload, department || undefined)
       setResults(results)
       navigate('/results')
     } catch (err: any) {

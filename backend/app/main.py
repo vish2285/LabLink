@@ -1,6 +1,10 @@
 # 🚀 ResearchMatch FastAPI (JSON-backed MVP)
-from fastapi import FastAPI, HTTPException, Query, Body
+from fastapi import FastAPI, HTTPException, Query, Body, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from .database import Base, engine, get_db
+from .models import Professor as ProfessorModel
+Base.metadata.create_all(bind=engine)
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import os, json, re
@@ -133,53 +137,77 @@ def health():
 def view_raw():
     return PROFESSORS  # dev/debug
 
-@app.get("/api/professors", response_model=List[Professor])
-def list_professors(department: Optional[str] = Query(None, description="Substring filter (e.g., 'Computer Science')")):
-    if not department:
-        return PROFESSORS
-    dep = department.lower()
-    return [p for p in PROFESSORS if dep in (p.get("department") or "").lower()]
+def _prof_to_dict(p: ProfessorModel) -> Dict[str, Any]:
+    pubs: List[Dict[str, Any]] = []
+    try:
+        pubs = json.loads(p.recent_publications or "[]")
+    except Exception:
+        pubs = []
+    return {
+        "id": int(p.id),
+        "name": p.name or "",
+        "department": p.department or "",
+        "email": p.email or "",
+        "profile_link": p.profile_link or "",
+        "research_interests": p.research_interests or "",
+        "recent_publications": pubs,
+    }
 
-@app.get("/api/professors/{professor_id}", response_model=Professor)
-def get_professor(professor_id: int):
-    for p in PROFESSORS:
-        if int(p["id"]) == professor_id:
-            return p
-    raise HTTPException(404, "Professor not found")
 
-@app.get("/api/departments", response_model=List[str])
-def list_departments():
-    deps = sorted({(p.get("department") or "").strip() for p in PROFESSORS if p.get("department")})
-    return [d for d in deps if d]
+@app.get("/api/professors")
+def list_professors(department: str | None = None, db: Session = Depends(get_db)):
+    q = db.query(ProfessorModel)
+    if department:
+        q = q.filter(ProfessorModel.department.ilike(f"%{department}%"))
+    return [_prof_to_dict(p) for p in q.all()]
+
+@app.get("/api/professors/{professor_id}")
+def get_professor(professor_id: int, db: Session = Depends(get_db)):
+    p = db.get(ProfessorModel, professor_id)
+    if not p:
+        raise HTTPException(404, "Professor not found")
+    return _prof_to_dict(p)
+
+@app.get("/api/departments")
+def list_departments(db: Session = Depends(get_db)):
+    rows = db.query(ProfessorModel.department).distinct().all()
+    return sorted([d for (d,) in rows if d]) 
 
 @app.post("/api/match", response_model=MatchResponse)
 def match_professors(
     profile: StudentProfileIn = Body(...),
     top_k: int = Query(10, ge=1, le=50),
     department: Optional[str] = Query(None, description="Optional substring filter"),
+    db: Session = Depends(get_db),
 ):
-    if not profile.interests.strip() and not (profile.skills or "").strip():
-        raise HTTPException(400, "Provide at least interests or skills")
+    try:
+        if not profile.interests.strip() and not (profile.skills or "").strip():
+            raise HTTPException(400, "Provide at least interests or skills")
 
-    query = f"{profile.interests} {profile.skills or ''}".strip()
-    profs = PROFESSORS
-    if department:
-        dep = department.lower()
-        profs = [p for p in PROFESSORS if dep in (p.get("department") or "").lower()]
+        query = f"{profile.interests} {profile.skills or ''}".strip()
+        db_profs = db.query(ProfessorModel)
+        if department:
+            db_profs = db_profs.filter(ProfessorModel.department.ilike(f"%{department}%"))
+        profs = [_prof_to_dict(p) for p in db_profs.all()]
 
-    if not profs:
-        return MatchResponse(student_query=query, department=department or "", matches=[])
+        if not profs:
+            return MatchResponse(student_query=query, department=department or "", matches=[])
 
-    ranked = rank_professors(profs, query, top_k)
-    matches = [
-        MatchItem(
-            score=round(r["score"], 6),
-            score_percent=_pct(r["score"]),
-            professor=Professor(**r["professor"])
-        )
-        for r in ranked
-    ]
-    return MatchResponse(student_query=query, department=department or "", matches=matches)
+        ranked = rank_professors(profs, query, top_k)
+        matches = [
+            MatchItem(
+                score=round(r["score"], 6),
+                score_percent=_pct(r["score"]),
+                professor=Professor(**r["professor"])
+            )
+            for r in ranked
+        ]
+        return MatchResponse(student_query=query, department=department or "", matches=matches)
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Never crash the server; return empty matches with the query context
+        return MatchResponse(student_query=f"{(profile.interests or '').strip()} {(profile.skills or '').strip()}".strip(), department=department or "", matches=[])
 
 @app.post("/api/email/generate", response_model=EmailDraft)
 def email_generate(req: EmailRequest):
