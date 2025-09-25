@@ -19,10 +19,6 @@ scikit-learn==1.5.0
 # Optional utilities
 numpy==1.26.4              # scikit-learn dependency (sometimes needs pinning)
 
-<<<<<<< HEAD
 # Optional ML/DB (add when needed)
 # pandas==2.2.3
 # alembic==1.14.0
-=======
-psycopg2-binary==2.9.9
->>>>>>> ea5d1c44271542f3a96fece680b6e3e775218de2
