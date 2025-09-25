@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import { matchProfessors } from '../lib/api'
+import { matchProfessors, fetchDepartments } from '../lib/api'
 
 export default function ProfileForm() {
   const navigate = useNavigate()
@@ -9,20 +9,34 @@ export default function ProfileForm() {
   const [interests, setInterests] = useState('')
   const [skills, setSkills] = useState('')
   const [department, setDepartment] = useState('')
-  const [departments] = useState<string[]>([
-    'Computer Science',
-    'Electrical and Computer Engineering',
-    'Mechanical Engineering',
-    'Civil and Environmental Engineering',
-    'Biomedical Engineering',
-    'Mathematics',
-    'Statistics',
-    'Physics',
-    'Chemistry',
-    'Biology',
-  ])
+  const [departments, setDepartments] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadDepartments() {
+      try {
+        const deps = await fetchDepartments()
+        setDepartments(deps)
+      } catch (err) {
+        console.error('Failed to load departments:', err)
+        // Fallback to hardcoded departments if API fails
+        setDepartments([
+          'Computer Science',
+          'Electrical and Computer Engineering',
+          'Mechanical Engineering',
+          'Civil and Environmental Engineering',
+          'Biomedical Engineering',
+          'Mathematics',
+          'Statistics',
+          'Physics',
+          'Chemistry',
+          'Biology',
+        ])
+      }
+    }
+    loadDepartments()
+  }, [])
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -30,8 +44,8 @@ export default function ProfileForm() {
     setLoading(true)
     try {
       const payload = {
-        interests: interests.split(',').map(s => s.trim()).filter(Boolean),
-        skills: skills.split(',').map(s => s.trim()).filter(Boolean),
+        interests: interests.trim(),
+        skills: skills.trim(),
       }
       setProfile(payload)
       const results = await matchProfessors(payload, department || undefined)

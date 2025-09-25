@@ -1,19 +1,48 @@
+export type Publication = {
+  title?: string;
+  abstract?: string;
+  year?: number;
+  link?: string;
+};
+
 export type Professor = {
-  id?: string;
+  id: number;
   name: string;
   department?: string;
-  interests?: string[];
-  publications?: string[];
   email?: string;
+  research_interests?: string;
+  profile_link?: string;
+  skills: string[];
+  recent_publications: Publication[];
 };
 
 export type StudentProfile = {
-  interests: string[];
-  skills?: string[];
+  name?: string;
+  email?: string;
+  interests: string;
+  skills?: string;
   availability?: string;
-  department?: string;
 };
 
-export type MatchResult = Professor & { score?: number };
+export type MatchItem = {
+  score: number;
+  score_percent: number;
+  why: {
+    interests_hits: string[];
+    skills_hits: string[];
+    pubs_hits: string[];
+  };
+  professor: Professor;
+};
+
+export type MatchResult = Professor & { 
+  score?: number;
+  score_percent?: number;
+  why?: {
+    interests_hits: string[];
+    skills_hits: string[];
+    pubs_hits: string[];
+  };
+};
 
 
