@@ -8,6 +8,10 @@ export default function EmailEditor() {
   const [generatedEmail, setGeneratedEmail] = useState<{ subject: string; body: string } | null>(null)
   const [loading, setLoading] = useState(false)
   
+  console.log('EmailEditor - selectedProfessor:', selectedProfessor)
+  console.log('EmailEditor - emailDraft:', emailDraft)
+  console.log('EmailEditor - profile:', profile)
+  
   const subject = useMemo(
     () => generatedEmail?.subject || (selectedProfessor ? `Prospective research with ${selectedProfessor.name}` : 'Prospective research inquiry'),
     [selectedProfessor, generatedEmail]
