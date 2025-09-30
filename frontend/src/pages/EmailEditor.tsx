@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { FiMail, FiPaperclip, FiExternalLink, FiArrowLeft } from 'react-icons/fi'
+import { useState as useReactState } from 'react'
 import { useApp } from '../context/AppContext'
 import { generateEmail } from '../lib/api'
 
@@ -7,6 +9,7 @@ export default function EmailEditor() {
   const { selectedProfessor, emailDraft, setEmailDraft, profile } = useApp()
   const [generatedEmail, setGeneratedEmail] = useState<{ subject: string; body: string } | null>(null)
   const [loading, setLoading] = useState(false)
+  const [file, setFile] = useReactState<File | null>(null)
   
   console.log('EmailEditor - selectedProfessor:', selectedProfessor)
   console.log('EmailEditor - emailDraft:', emailDraft)
@@ -46,6 +49,12 @@ export default function EmailEditor() {
 
   return (
     <div className="space-y-6">
+      <div className="mx-auto w-full max-w-3xl px-1">
+        <Link to="/results" className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white">
+          <FiArrowLeft className="h-4 w-4" />
+          Back to Results
+        </Link>
+      </div>
       <div className="mx-auto w-full max-w-3xl rounded-xl border border-white/10 bg-white/5 p-6 shadow-sm text-slate-100">
         {!selectedProfessor && (
           <p className="text-sm text-slate-300">No professor selected. <Link to="/results" className="text-[#7cc4ff] underline">Go to results</Link></p>
@@ -63,23 +72,49 @@ export default function EmailEditor() {
               onChange={e => setEmailDraft(e.target.value)}
             />
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <button
-              className="rounded-lg bg-green-600 px-4 py-2 text-white shadow hover:bg-green-700 disabled:opacity-60"
+              className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md bg-green-600 px-4 text-sm text-white shadow-lg ring-1 ring-white/10 hover:bg-green-700 active:scale-[0.99] transition disabled:opacity-60"
               onClick={handleGenerateEmail}
               disabled={loading}
             >
-              {loading ? 'Generating...' : 'Generate Email'}
+              <FiMail className="h-4 w-4" />
+              {loading ? 'Generating…' : 'Generate Email'}
+            </button>
+            <label className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md border border-white/20 bg-white/5 px-4 text-sm text-slate-200 cursor-pointer hover:bg-white/10 transition">
+              <input type="file" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
+              <FiPaperclip className="h-4 w-4" />
+              <span className="truncate max-w-[12rem]">{file ? file.name : 'Attach CV/Resume'}</span>
+            </label>
+            <button
+              className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md bg-[#1e3a8a] px-4 text-sm text-white shadow-lg ring-1 ring-white/10 hover:bg-[#2544a0] active:scale-[0.99] transition disabled:opacity-60"
+              onClick={async () => {
+                if (!selectedProfessor) return
+                const subjectText = subject
+                const bodyText = body
+                let payload: any = { to: selectedProfessor.email || '', subject: subjectText, body: bodyText }
+                if (file) {
+                  const arr = await file.arrayBuffer()
+                  const b64 = btoa(String.fromCharCode(...new Uint8Array(arr)))
+                  payload.filename = file.name
+                  payload.file_b64 = b64
+                }
+                await fetch('/api/email/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                alert('Email sent')
+              }}
+            >
+              <FiMail className="h-4 w-4" />
+              Send Email
             </button>
             <a
-              className="rounded-lg bg-[#1e3a8a] px-4 py-2 text-white shadow hover:bg-[#2544a0]"
+              className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md border border-white/20 bg-white/5 px-4 text-sm text-slate-200 hover:bg-white/10 transition"
               href={
                 `mailto:${selectedProfessor?.email || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
               }
             >
+              <FiExternalLink className="h-4 w-4" />
               Open in Mail
             </a>
-            <Link className="rounded-lg border border-white/20 px-4 py-2 shadow-sm hover:bg-white/10" to="/results">Back to Results</Link>
           </div>
         </div>
       </div>

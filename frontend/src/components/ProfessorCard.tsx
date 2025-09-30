@@ -31,7 +31,7 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
         : 'border-gray-200 shadow-sm'
   
   return (
-    <div className={`relative rounded-xl border border-white/10 bg-white/5 ${containerAccent}`}>
+    <div className={`relative rounded-xl border border-white/10 bg-white/5 ${containerAccent} transition-transform duration-300 ease-out hover:-translate-y-1 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/20 will-change-transform`}>
       {typeof rank === 'number' && (
         <div className="absolute -top-3 -left-3">
           <div className={`h-8 w-8 rounded-full bg-gradient-to-br ${rankBadgeClass} text-white text-sm font-bold flex items-center justify-center shadow-md`}>

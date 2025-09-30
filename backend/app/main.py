@@ -18,7 +18,7 @@ from .schema import (
 from .matching import (
     prof_to_doc, VectorStore, extract_skills, jaccard, pubs_score, tokenize, norm_text
 )
-from .email_utils import build_email
+from .email_utils import build_email, send_email_with_attachment
 import httpx
 import re
 from urllib.parse import urljoin
@@ -302,6 +302,25 @@ def email_generate(req: EmailRequest):
         topic=req.topic
     )
     return EmailDraft(**draft)
+
+@app.post("/api/email/send")
+def email_send(
+    to: str = Body(..., embed=True),
+    subject: str = Body(..., embed=True),
+    body: str = Body(..., embed=True),
+    filename: str | None = Body(None, embed=True),
+    file_b64: str | None = Body(None, embed=True),
+):
+    import base64
+    attachment_bytes = base64.b64decode(file_b64) if file_b64 else None
+    send_email_with_attachment(
+        to_email=to,
+        subject=subject,
+        body=body,
+        attachment_bytes=attachment_bytes,
+        attachment_filename=filename,
+    )
+    return {"ok": True}
 
 
 # ---- Photo scraping (best-effort, lightweight) ----
