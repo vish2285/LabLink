@@ -32,7 +32,7 @@ export default function Results() {
   if (!results?.length) return <EmptyState />
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
       <motion.div
         className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 pb-6"
@@ -41,10 +41,10 @@ export default function Results() {
         animate="show"
       >
         <div className="text-center space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Top Matches</h1>
-          <p className="text-gray-600">Discover UC Davis professors aligned with your interests and skills.</p>
-          <div className="flex items-center justify-center gap-3 text-sm text-gray-500">
-            <Link to="/profile" className="hover:text-blue-700">Edit Profile</Link>
+          <h1 className="text-3xl md:text-4xl font-bold text-white">Top Matches</h1>
+          <p className="text-slate-300/90">Discover UC Davis professors aligned with your interests and skills.</p>
+          <div className="flex items-center justify-center gap-3 text-sm text-slate-400">
+            <Link to="/profile" className="hover:text-white">Edit Profile</Link>
             <span>•</span>
             <span>{results.length} matches found</span>
           </div>
@@ -91,9 +91,9 @@ export default function Results() {
           {results.length > 3 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-px flex-1 bg-gray-200" />
-                <span className="text-sm font-medium text-gray-700">More Matches</span>
-                <div className="h-px flex-1 bg-gray-200" />
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="text-sm font-medium text-slate-300">More Matches</span>
+                <div className="h-px flex-1 bg-white/10" />
               </div>
               <AnimatePresence mode="sync">
                 <motion.div

@@ -1,36 +1,82 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
+import CursorGrid from '../components/CursorGrid'
+import { FiUserPlus, FiSearch, FiMail } from 'react-icons/fi'
 
 export default function Landing() {
   const [open, setOpen] = useState(false)
 
   return (
-    <section>
-      <div className="mx-auto max-w-screen-xl gap-12 px-4 py-28 text-gray-600 md:px-8">
+    <section className="relative overflow-hidden">
+      <CursorGrid />
+      <div className="relative mx-auto max-w-screen-xl gap-12 px-4 py-32 text-slate-300 md:px-8">
         <div className="mx-auto max-w-4xl space-y-5 text-center">
-          <h1 className="text-sm font-medium text-[#FFBF00]">Built for UC Davis students</h1>
-          <h2 className="mx-auto text-4xl font-extrabold text-gray-800 md:text-5xl">
-            Connect with UC Davis professors aligned with your interests via
-            <span className="bg-gradient-to-r from-[#002855] to-[#FFBF00] bg-clip-text text-transparent"> LabLink</span>
-          </h2>
-          <p className="mx-auto max-w-2xl">
-            Enter your interests and skills. We surface UC Davis faculty who match and help you send a professional outreach email.
+          <span className="inline-block rounded-full border border-white/20 px-4 py-1 text-xs tracking-wide text-slate-300">Built for UC Davis students</span>
+          <h1 className="mx-auto text-5xl md:text-7xl font-extrabold text-white leading-tight">
+            Find professors aligned with your research focus via
+            <span className="bg-gradient-to-r from-[#7cc4ff] to-[#FFBF00] bg-clip-text text-transparent"> LabLink</span>
+          </h1>
+          <p className="mx-auto max-w-2xl text-slate-300/90 text-lg">
+            Tell us your interests and skills. LabLink surfaces matching faculty and drafts your first outreach email.
           </p>
           <div className="items-center justify-center gap-x-3 space-y-3 sm:flex sm:space-y-0">
-            <a href="/profile" className="block rounded-lg bg-[#002855] py-2 px-4 font-medium text-white shadow-lg duration-150 hover:opacity-90">
-              Get started
+            <a href="/profile" className="block rounded-lg bg-[#1e3a8a] py-3 px-6 font-medium text-white shadow-lg duration-150 hover:bg-[#2544a0]">
+              Create your profile
             </a>
-            <button onClick={() => setOpen(true)} className="block rounded-lg border py-2 px-4 font-medium text-gray-700 duration-150 hover:text-gray-500 active:bg-gray-100">
-              Watch demo
+            <button onClick={() => setOpen(true)} className="block rounded-lg border border-white/20 py-3 px-6 font-medium text-slate-200 duration-150 hover:bg-white/10">
+              How it works
             </button>
           </div>
         </div>
-        <div className="mt-14">
-          <div className="relative">
-            <video className="w-full rounded-lg border shadow-lg" controls poster="https://raw.githubusercontent.com/sidiDev/remote-assets/main/Safari%20(Big%20Sur)%20-%20Light.png">
-              <source src="https://raw.githubusercontent.com/sidiDev/remote-assets/main/FloatUI.mp4" type="video/mp4" />
-            </video>
+        <motion.div
+          className="mx-auto mt-32 max-w-5xl"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          viewport={{ once: true, amount: 0.3 }}
+        >
+          <div className="grid gap-6 md:grid-cols-3">
+            <motion.div
+              className="rounded-xl border border-white/10 bg-white/5 p-6 text-left"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05, duration: 0.45 }}
+              viewport={{ once: true, amount: 0.3 }}
+            >
+              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#1e3a8a] text-white">
+                <FiUserPlus className="h-5 w-5" />
+              </div>
+              <h3 className="text-white font-semibold mb-1">Create your profile</h3>
+              <p className="text-slate-300 text-sm">Add your interests, skills, and optionally a department to personalize matches.</p>
+            </motion.div>
+            <motion.div
+              className="rounded-xl border border-white/10 bg-white/5 p-6 text-left"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.45 }}
+              viewport={{ once: true, amount: 0.3 }}
+            >
+              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#1e3a8a] text-white">
+                <FiSearch className="h-5 w-5" />
+              </div>
+              <h3 className="text-white font-semibold mb-1">See top matches</h3>
+              <p className="text-slate-300 text-sm">We analyze interests, skills, and publications to surface aligned professors.</p>
+            </motion.div>
+            <motion.div
+              className="rounded-xl border border-white/10 bg-white/5 p-6 text-left"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25, duration: 0.45 }}
+              viewport={{ once: true, amount: 0.3 }}
+            >
+              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#1e3a8a] text-white">
+                <FiMail className="h-5 w-5" />
+              </div>
+              <h3 className="text-white font-semibold mb-1">Draft and send</h3>
+              <p className="text-slate-300 text-sm">Open the email editor to generate a tailored outreach email and send it.</p>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {open && (

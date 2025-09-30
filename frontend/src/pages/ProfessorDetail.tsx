@@ -106,61 +106,61 @@ export default function ProfessorDetail() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div className="mx-auto max-w-5xl p-6 text-slate-100">
       <div className="mb-6">
-        <nav className="text-sm text-gray-500">
-          <Link to="/results" className="hover:text-blue-700">Results</Link>
+        <nav className="text-sm text-slate-400">
+          <Link to="/results" className="hover:text-white">Results</Link>
           <span className="mx-2">/</span>
-          <span className="text-gray-700">{professor.name}</span>
+          <span className="text-slate-300">{professor.name}</span>
         </nav>
       </div>
 
       <header className="mb-6">
         <div className="flex items-center gap-4 mb-3">
           <Avatar name={professor.name} photoUrl={professor.photo_url} />
-          <h1 className="text-3xl font-bold text-gray-900">{professor.name}</h1>
+          <h1 className="text-3xl font-bold text-white">{professor.name}</h1>
         </div>
         {professor.department && (
-          <p className="text-gray-600 mt-1">{professor.department}</p>
+          <p className="text-slate-300 mt-1">{professor.department}</p>
         )}
       </header>
 
       <section className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           {professor.research_interests && (
-            <div className="rounded-xl border bg-white p-5">
-              <h2 className="mb-3 text-lg font-semibold text-gray-900">Research Interests</h2>
-              <p className="text-gray-700 leading-relaxed">{professor.research_interests}</p>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+              <h2 className="mb-3 text-lg font-semibold text-white">Research Interests</h2>
+              <p className="text-slate-200 leading-relaxed">{professor.research_interests}</p>
             </div>
           )}
 
           {professor.skills?.length ? (
-            <div className="rounded-xl border bg-white p-5">
-              <h2 className="mb-3 text-lg font-semibold text-gray-900">Skills</h2>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+              <h2 className="mb-3 text-lg font-semibold text-white">Skills</h2>
               <TagList items={professor.skills} max={24} />
             </div>
           ) : null}
 
           {professor.recent_publications?.length ? (
-            <div className="rounded-xl border bg-white p-5">
-              <h2 className="mb-3 text-lg font-semibold text-gray-900">Recent Publications</h2>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+              <h2 className="mb-3 text-lg font-semibold text-white">Recent Publications</h2>
               <ul className="space-y-4">
                 {professor.recent_publications.slice(0, 6).map((pub, i) => (
                   <li key={i} className="border-b last:border-b-0 pb-4 last:pb-0">
                     <div className="flex items-baseline justify-between gap-3">
                       {normalizePubLink(pub.title, pub.link) ? (
-                        <a href={normalizePubLink(pub.title, pub.link)} target="_blank" rel="noopener noreferrer" className="font-medium text-gray-900 hover:underline">
+                        <a href={normalizePubLink(pub.title, pub.link)} target="_blank" rel="noopener noreferrer" className="font-medium text-white hover:underline">
                           {pub.title || 'Untitled'}
                         </a>
                       ) : (
-                        <span className="font-medium text-gray-900">{pub.title || 'Untitled'}</span>
+                        <span className="font-medium text-white">{pub.title || 'Untitled'}</span>
                       )}
                       {typeof pub.year === 'number' && (
-                        <span className="text-xs text-gray-500">{pub.year}</span>
+                        <span className="text-xs text-slate-400">{pub.year}</span>
                       )}
                     </div>
                     {pub.abstract && (
-                      <p className="mt-1 text-sm text-gray-600 line-clamp-3">{pub.abstract}</p>
+                      <p className="mt-1 text-sm text-slate-300 line-clamp-3">{pub.abstract}</p>
                     )}
                   </li>
                 ))}
@@ -170,19 +170,19 @@ export default function ProfessorDetail() {
         </div>
 
         <aside className="space-y-4">
-          <div className="rounded-xl border bg-white p-5">
-            <h3 className="mb-3 text-base font-semibold text-gray-900">Profile</h3>
-            <div className="space-y-2 text-sm text-gray-700">
+          <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+            <h3 className="mb-3 text-base font-semibold text-white">Profile</h3>
+            <div className="space-y-2 text-sm text-slate-200">
               {professor.email && (
                 <div className="flex items-center justify-between">
                   <span>Email</span>
-                  <a href={`mailto:${professor.email}`} className="text-blue-700 hover:underline">{professor.email}</a>
+                  <a href={`mailto:${professor.email}`} className="text-[#7cc4ff] hover:underline">{professor.email}</a>
                 </div>
               )}
               {professor.profile_link && (
                 <div className="flex items-center justify-between">
                   <span>Website</span>
-                  <a href={professor.profile_link} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">Open</a>
+                  <a href={professor.profile_link} target="_blank" rel="noopener noreferrer" className="text-[#7cc4ff] hover:underline">Open</a>
                 </div>
               )}
             </div>
@@ -193,20 +193,20 @@ export default function ProfessorDetail() {
                   href={professor.profile_link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-gray-50 whitespace-nowrap"
+                  className="inline-flex items-center justify-center rounded-md border border-white/20 px-3 py-1.5 text-xs font-medium hover:bg-white/10 whitespace-nowrap"
                 >
                   View Site
                   <FiExternalLink className="ml-1 h-3 w-3 opacity-80" />
                 </a>
               ) : (
-                <button className="inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-xs font-medium opacity-60 cursor-not-allowed whitespace-nowrap">
+                <button className="inline-flex items-center justify-center rounded-md border border-white/20 px-3 py-1.5 text-xs font-medium opacity-60 cursor-not-allowed whitespace-nowrap">
                   View Site
                   <FiExternalLink className="ml-1 h-3 w-3 opacity-60" />
                 </button>
               )}
               <button
                 onClick={handleConnect}
-                className="inline-flex items-center justify-center rounded-md bg-[#002855] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 whitespace-nowrap"
+                className="inline-flex items-center justify-center rounded-md bg-[#1e3a8a] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#2544a0] whitespace-nowrap"
               >
                 <FiMail className="mr-1 h-3 w-3 text-white/90" />
                 Draft Email

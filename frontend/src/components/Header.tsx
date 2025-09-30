@@ -9,7 +9,7 @@ export default function Header() {
   const [open, setOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur">
+    <header className="sticky top-0 z-10 border-b border-white/10 bg-slate-900/60 backdrop-blur">
       <div
         className={classNames(
           'mx-auto max-w-6xl px-4',
@@ -18,7 +18,7 @@ export default function Header() {
       >
         <div className="flex items-center gap-3">
           <button
-            className="lg:hidden text-gray-600 hover:text-gray-900"
+            className="lg:hidden text-slate-300 hover:text-white"
             onClick={() => setOpen(s => !s)}
             aria-label="Toggle navigation"
           >
@@ -41,7 +41,7 @@ export default function Header() {
             )}
           </button>
 
-          <Link to="/" className="flex items-center gap-2 text-gray-900">
+          <Link to="/" className="flex items-center gap-2 text-slate-100">
             <img src="/lablink.png" alt="LabLink logo" className="h-10 w-10" />
             <span className="text-xl font-semibold ">LabLink</span>
           </Link>
@@ -60,8 +60,8 @@ export default function Header() {
                   to={link.path}
                   className={({ isActive }) =>
                     classNames(
-                      'rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900',
-                      isActive && 'bg-gray-100 text-gray-900'
+                      'rounded px-3 py-2 text-sm text-slate-300 hover:bg-white/10 hover:text-white',
+                      isActive && 'bg-white/10 text-white'
                     )
                   }
                 >
@@ -75,7 +75,7 @@ export default function Header() {
         <div className="hidden lg:flex" />
       </div>
       {open && (
-        <div className="border-t bg-white lg:hidden">
+        <div className="border-t border-white/10 bg-slate-900/80 lg:hidden">
           <ul className="mx-auto max-w-6xl px-4 py-3 space-y-2">
             {[
               { title: 'Profile', path: '/' },
@@ -88,8 +88,8 @@ export default function Header() {
                   onClick={() => setOpen(false)}
                   className={({ isActive }) =>
                     classNames(
-                      'block rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-50',
-                      isActive && 'bg-gray-50 text-gray-900'
+                      'block rounded px-3 py-2 text-sm text-slate-300 hover:bg-white/10',
+                      isActive && 'bg-white/10 text-white'
                     )
                   }
                 >

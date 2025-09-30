@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Ensure the page background is dark even beyond header/footer (overscroll areas) */
+@layer base {
+  html, body, #root {
+    height: 100%;
+    background-color: #05080f; /* darkest tone of the app gradient */
+  }
+}

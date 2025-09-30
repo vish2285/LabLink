@@ -1,6 +1,6 @@
 export function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+    <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-slate-200 border border-white/10">
       {children}
     </span>
   )
@@ -15,7 +15,7 @@ export function TagList({ items, max = 6 }: { items: string[]; max?: number }) {
         <Tag key={i}>{s}</Tag>
       ))}
       {extra > 0 && (
-        <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">+{extra} more</span>
+        <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-[#7cc4ff] border border-white/10">+{extra} more</span>
       )}
     </div>
   )

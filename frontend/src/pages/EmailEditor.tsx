@@ -46,40 +46,40 @@ export default function EmailEditor() {
 
   return (
     <div className="space-y-6">
-      <div className="mx-auto w-full max-w-3xl rounded-xl border bg-white p-6 shadow-sm">
+      <div className="mx-auto w-full max-w-3xl rounded-xl border border-white/10 bg-white/5 p-6 shadow-sm text-slate-100">
         {!selectedProfessor && (
-          <p className="text-sm text-gray-600">No professor selected. <Link to="/results" className="text-blue-600 underline">Go to results</Link></p>
+          <p className="text-sm text-slate-300">No professor selected. <Link to="/results" className="text-[#7cc4ff] underline">Go to results</Link></p>
         )}
         <div className="grid gap-5">
           <div>
-            <label className="block text-sm font-medium">Subject</label>
-            <input className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" value={subject} readOnly />
+            <label className="block text-sm font-medium text-slate-200">Subject</label>
+            <input className="mt-1 w-full rounded-lg border border-white/20 bg-slate-900 text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]" value={subject} readOnly />
           </div>
           <div>
-            <label className="block text-sm font-medium">Body</label>
+            <label className="block text-sm font-medium text-slate-200">Body</label>
             <textarea
-              className="mt-1 h-[24rem] w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 h-[24rem] w-full rounded-lg border border-white/20 bg-slate-900 text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
               value={body}
               onChange={e => setEmailDraft(e.target.value)}
             />
           </div>
           <div className="flex gap-3">
             <button
-              className="rounded-lg bg-green-600 px-4 py-2 text-white shadow hover:opacity-90 disabled:opacity-60"
+              className="rounded-lg bg-green-600 px-4 py-2 text-white shadow hover:bg-green-700 disabled:opacity-60"
               onClick={handleGenerateEmail}
               disabled={loading}
             >
               {loading ? 'Generating...' : 'Generate Email'}
             </button>
             <a
-              className="rounded-lg bg-[#002855] px-4 py-2 text-white shadow hover:opacity-90"
+              className="rounded-lg bg-[#1e3a8a] px-4 py-2 text-white shadow hover:bg-[#2544a0]"
               href={
                 `mailto:${selectedProfessor?.email || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
               }
             >
               Open in Mail
             </a>
-            <Link className="rounded-lg border px-4 py-2 shadow-sm" to="/results">Back to Results</Link>
+            <Link className="rounded-lg border border-white/20 px-4 py-2 shadow-sm hover:bg-white/10" to="/results">Back to Results</Link>
           </div>
         </div>
       </div>
