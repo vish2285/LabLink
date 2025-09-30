@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 
 function classNames(...classes: Array<string | false | undefined>) {

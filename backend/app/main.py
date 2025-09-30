@@ -3,6 +3,7 @@ from fastapi import FastAPI, Depends, HTTPException, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import os
+import re
 
 from .database import Base, engine, get_db
 from . import crud
@@ -11,9 +12,12 @@ from .schema import (
     MatchResponse, MatchItem, EmailRequest, EmailDraft
 )
 from .matching import (
-    prof_to_doc, VectorStore, extract_skills, jaccard, pubs_score, tokenize
+    prof_to_doc, VectorStore, extract_skills, jaccard, pubs_score, tokenize, norm_text
 )
 from .email_utils import build_email
+import httpx
+import re
+from urllib.parse import urljoin
 
 # ---- App & CORS ----
 app = FastAPI(title="ResearchMatch DB API", version="1.0.0")
@@ -66,6 +70,7 @@ def to_prof_out(p) -> ProfessorOut:
     return ProfessorOut(
         id=p.id, name=p.name, department=p.department, email=p.email,
         research_interests=p.research_interests, profile_link=p.profile_link,
+        photo_url=getattr(p, 'photo_url', ''),
         skills=skills, recent_publications=pubs
     )
 
@@ -106,7 +111,7 @@ def match_professors(
     if not profile.interests.strip() and not (profile.skills or "").strip():
         raise HTTPException(400, "Provide at least interests or skills")
 
-    # normalize weights
+    # normalize weights and add small boost when multiple channels align
     total = max(1e-9, w_interests + w_skills + w_pubs)
     w_interests, w_skills, w_pubs = w_interests/total, w_skills/total, w_pubs/total
 
@@ -124,9 +129,12 @@ def match_professors(
     # map professor id -> sim (since VECSTORE order is all profs, not filtered)
     id_to_sim = {pid: sims[i] for i, pid in enumerate(PROF_IDS)}
 
-    # student skills
+    # student skills and interests
     student_skills = extract_skills(profile.skills or "")
     interest_tokens = [t for t in tokenize(profile.interests) if len(t) > 2][:12]
+    # Preserve multi-word interest phrases split by comma/semicolon for why-details
+    interest_phrases_raw = [s.strip() for s in re.split(r"[,;]", profile.interests) if s.strip()]
+    interest_phrases_norm = [norm_text(s) for s in interest_phrases_raw]
 
     scored = []
     for p in profs:
@@ -134,15 +142,39 @@ def match_professors(
 
         prof_skills = [ps.skill.name for ps in p.professor_skills]
         jac, skill_hits = jaccard(student_skills, prof_skills)
+        # Skill precision/recall/F1 to penalize missing required skills
+        A, B = set(student_skills), set(prof_skills)
+        inter = len(A & B)
+        prec = inter / len(B) if B else 0.0
+        rec = inter / len(A) if A else 0.0
+        f1 = (2 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
+        skill_score = (0.7 * f1) + (0.3 * jac)
 
         pubs_list = [{"title": d.title, "abstract": d.abstract, "year": d.year, "link": d.link} for d in p.publications]
         pub_base, pub_hits, bonus = pubs_score(interest_tokens, pubs_list)
 
-        base = (w_interests * sim_interests) + (w_skills * jac) + (w_pubs * pub_base)
-        final = clamp01(base * bonus)
+        # Collect phrase hits for interests (use multi-word phrases where applicable)
+        text_parts = [p.research_interests or ""]
+        for d in pubs_list:
+            text_parts += [(d.get("title") or ""), (d.get("abstract") or "")]
+        combined_text = norm_text(" ".join(text_parts))
+        phrase_hits: list[str] = []
+        for raw, nn in zip(interest_phrases_raw, interest_phrases_norm):
+            if nn and nn in combined_text:
+                phrase_hits.append(raw)
+
+        base = (w_interests * sim_interests) + (w_skills * skill_score) + (w_pubs * pub_base)
+        # synergy bonus when both interests and skills are strong
+        synergy = 1.0
+        if sim_interests >= 0.5 and skill_score >= 0.5:
+            synergy = 1.08
+        # penalize weak skill coverage
+        if f1 < 0.3:
+            synergy *= 0.85
+        final = clamp01(base * bonus * synergy)
 
         why = {
-            "interests_hits": interest_tokens[:6],
+            "interests_hits": phrase_hits[:6],
             "skills_hits": skill_hits[:6],
             "pubs_hits": pub_hits[:6]
         }
@@ -177,3 +209,35 @@ def email_generate(req: EmailRequest):
         topic=req.topic
     )
     return EmailDraft(**draft)
+
+
+# ---- Photo scraping (best-effort, lightweight) ----
+@app.get("/api/scrape_photo")
+def scrape_photo(url: str):
+    try:
+        resp = httpx.get(url, timeout=6.0)
+        resp.raise_for_status()
+        html = resp.text
+
+        def find_meta(pattern: str) -> str | None:
+            m = re.search(pattern, html, re.IGNORECASE)
+            return m.group(1).strip() if m else None
+
+        # Try OpenGraph
+        og = find_meta(r"<meta[^>]+property=[\'\"]og:image[\'\"][^>]+content=[\'\"]([^\'\"]+)[\'\"]")
+        if og:
+            return {"photo_url": urljoin(url, og)}
+
+        # Try twitter:image
+        tw = find_meta(r"<meta[^>]+name=[\'\"]twitter:image[\'\"][^>]+content=[\'\"]([^\'\"]+)[\'\"]")
+        if tw:
+            return {"photo_url": urljoin(url, tw)}
+
+        # Fallback to first <img>
+        img = find_meta(r"<img[^>]+src=[\'\"]([^\'\"]+)[\'\"][^>]*>")
+        if img:
+            return {"photo_url": urljoin(url, img)}
+
+        return {"photo_url": ""}
+    except Exception:
+        return {"photo_url": ""}

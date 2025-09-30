@@ -1,8 +1,8 @@
-import React from 'react'
-import { BrowserRouter, Routes, Route, Link, NavLink } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import ProfileForm from './pages/ProfileForm.tsx'
 import Results from './pages/Results.tsx'
 import EmailEditor from './pages/EmailEditor.tsx'
+import ProfessorDetail from './pages/ProfessorDetail.tsx'
 import Header from './components/Header.tsx'
 import Landing from './pages/Landing.tsx'
 import Footer from './components/Footer.tsx'
@@ -17,6 +17,7 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/profile" element={<ProfileForm />} />
             <Route path="/results" element={<Results />} />
+            <Route path="/professor/:id" element={<ProfessorDetail />} />
             <Route path="/email" element={<EmailEditor />} />
           </Routes>
         </main>

@@ -12,6 +12,12 @@ export async function fetchDepartments(): Promise<string[]> {
   return res.json()
 }
 
+export async function fetchProfessor(id: number): Promise<Professor> {
+  const res = await fetch(`/api/professors/${id}`)
+  if (!res.ok) throw new Error('Failed to load professor')
+  return res.json()
+}
+
 export async function matchProfessors(profile: StudentProfile, department?: string): Promise<MatchResult[]> {
   const query = department ? `?department=${encodeURIComponent(department)}` : ''
   const res = await fetch(`/api/match${query}`, {

@@ -11,6 +11,7 @@ class Professor(Base):
     email: Mapped[str | None] = mapped_column(String(255))
     research_interests: Mapped[str | None] = mapped_column(Text)
     profile_link: Mapped[str | None] = mapped_column(String(512))
+    photo_url: Mapped[str | None] = mapped_column(String(512), default="")
     recent_publications: Mapped[str | None] = mapped_column(Text, default="[]")  # JSON string for backward compatibility
 
     publications: Mapped[list["Publication"]] = relationship(

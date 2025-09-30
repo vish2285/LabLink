@@ -1,0 +1,118 @@
+import { useNavigate } from 'react-router-dom'
+import Avatar from './Avatar'
+import MatchScoreBadge from './MatchScoreBadge'
+import { TagList } from './Tag'
+
+export type ProfessorCardProps = {
+  professor: any
+  onSelect: () => void
+  centered?: boolean
+  rank?: number
+}
+
+export default function ProfessorCard({ professor, onSelect, centered = false, rank }: ProfessorCardProps) {
+  const navigate = useNavigate()
+  const rankBadgeClass = rank === 1
+    ? 'from-yellow-400 to-amber-600'
+    : rank === 2
+      ? 'from-slate-400 to-gray-500'
+      : rank === 3
+        ? 'from-amber-500 to-orange-600'
+        : 'from-blue-600 to-indigo-700'
+
+  // Consistent borders; tiered elevation by rank
+  const containerAccent = rank === 1
+    ? 'border-gray-200 shadow-lg'
+    : rank === 2
+      ? 'border-gray-200 shadow-md'
+      : rank === 3
+        ? 'border-gray-200 shadow'
+        : 'border-gray-200 shadow-sm'
+  
+  return (
+    <div className={`relative rounded-xl border bg-white ${containerAccent}`}>
+      {typeof rank === 'number' && (
+        <div className="absolute -top-3 -left-3">
+          <div className={`h-8 w-8 rounded-full bg-gradient-to-br ${rankBadgeClass} text-white text-sm font-bold flex items-center justify-center shadow-md`}>
+            {rank}
+          </div>
+        </div>
+      )}
+      <div className="p-6">
+        <div className={`flex items-start justify-between mb-6`}>
+          <div className="flex-1">
+            <div className="mb-3">
+              {/* Slightly larger avatar for top match */}
+              <div className={`${centered ? 'scale-125 origin-left inline-block' : ''}`}>
+                <Avatar name={professor.name} photoUrl={professor.photo_url} />
+              </div>
+            </div>
+            <h3 className={`${centered ? 'text-2xl md:text-3xl' : 'text-xl'} font-semibold text-gray-900 mb-1`}>{professor.name}</h3>
+            {professor.department && (
+              <p className="text-gray-600 font-medium text-sm mb-2">{professor.department}</p>
+            )}
+          </div>
+          <div className="flex flex-col items-end">
+            <MatchScoreBadge scorePercent={professor.score_percent || 0} />
+          </div>
+        </div>
+
+        {professor.research_interests && (
+          <div className="mb-4">
+            <p className="text-gray-700 leading-relaxed text-sm line-clamp-3">{professor.research_interests}</p>
+          </div>
+        )}
+
+        {professor.skills && professor.skills.length > 0 && (
+          <div className="mb-4">
+            <TagList items={professor.skills} max={6} />
+          </div>
+        )}
+
+        {professor.why && (
+          <div className="mb-6 p-4 rounded-lg border border-gray-100 bg-gray-50">
+            <div className="space-y-2">
+              {professor.why.interests_hits.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+                  <span className="text-xs text-gray-600">
+                    <span className="font-medium">Interests:</span> {professor.why.interests_hits.slice(0, 3).join(', ')}
+                  </span>
+                </div>
+              )}
+              {professor.why.skills_hits.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                  <span className="text-xs text-gray-600">
+                    <span className="font-medium">Skills:</span> {professor.why.skills_hits.slice(0, 3).join(', ')}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-2 grid grid-cols-2 gap-3">
+          <button
+            onClick={() => navigate(`/professor/${professor.id}`)}
+            className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h6m0 0v6m0-6L10 16" />
+            </svg>
+            View Profile
+          </button>
+          <button
+            onClick={onSelect}
+            className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white bg-[#002855] hover:opacity-90`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9" />
+            </svg>
+            Connect
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

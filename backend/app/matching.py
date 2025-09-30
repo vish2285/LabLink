@@ -1,6 +1,7 @@
 import re
 from typing import List, Dict, Any, Tuple
 from datetime import datetime
+from rank_bm25 import BM25Okapi
 
 try:
     from sklearn.feature_extraction.text import TfidfVectorizer
@@ -67,27 +68,59 @@ def prof_to_doc(p: Dict[str, Any]) -> str:
 
 class VectorStore:
     def __init__(self, prof_docs: List[str]):
-        self.docs = prof_docs
-        if SKLEARN_OK:
-            self.vect = TfidfVectorizer(stop_words="english")
-            self.mat = self.vect.fit_transform(self.docs)
+        # Normalize and drop empty documents to avoid sklearn empty vocabulary errors
+        cleaned_docs = [norm_text(d) for d in (prof_docs or []) if (d or "").strip()]
+        self.docs = cleaned_docs
+        # tokenized corpus for BM25
+        self._bm25_tokens: List[List[str]] = [tokenize(d) for d in self.docs]
+        self._bm25 = BM25Okapi(self._bm25_tokens) if self._bm25_tokens else None
+        if SKLEARN_OK and self.docs:
+            try:
+                self.vect = TfidfVectorizer(stop_words="english")
+                self.mat = self.vect.fit_transform(self.docs)
+            except ValueError:
+                # Fallback gracefully when vocabulary is empty
+                self.vect, self.mat = None, None
         else:
             self.vect, self.mat = None, None
 
     def sims(self, q: str) -> List[float]:
         qn = norm_text(q)
+        # TF-IDF cosine (if available)
+        tfidf_scores: List[float] | None = None
         if SKLEARN_OK and self.vect is not None:
             qvec = self.vect.transform([qn])
-            return [float(x) for x in cosine_similarity(qvec, self.mat)[0]]
-        # fallback: Jaccard on tokens
-        qtok = set(tokenize(qn))
-        out = []
-        for d in self.docs:
-            dtok = set(tokenize(d))
-            if not qtok or not dtok: out.append(0.0)
-            else:
-                out.append(len(qtok & dtok) / len(qtok | dtok))
-        return out
+            tfidf_scores = [float(x) for x in cosine_similarity(qvec, self.mat)[0]]
+
+        # BM25 lexical score (normalized)
+        bm25_scores: List[float] | None = None
+        if self._bm25 is not None:
+            q_tokens = tokenize(qn)
+            raw = self._bm25.get_scores(q_tokens)
+            mx = max(1e-9, max(raw) if len(raw) else 1.0)
+            bm25_scores = [float(x) / mx for x in raw]
+
+        # Coverage fallback
+        cov_scores: List[float] | None = None
+        if tfidf_scores is None and bm25_scores is None:
+            qtok = set(tokenize(qn))
+            out = []
+            for d in self.docs:
+                dtok = set(tokenize(d))
+                if not qtok or not dtok:
+                    out.append(0.0)
+                else:
+                    out.append(len(qtok & dtok) / max(1, len(qtok)))
+            cov_scores = out
+
+        # Blend available signals: TF-IDF 0.6, BM25 0.4; else fallback
+        if tfidf_scores is not None and bm25_scores is not None:
+            return [0.6 * a + 0.4 * b for a, b in zip(tfidf_scores, bm25_scores)]
+        if tfidf_scores is not None:
+            return tfidf_scores
+        if bm25_scores is not None:
+            return bm25_scores
+        return cov_scores or []
 
 def pubs_score(interests_tokens: List[str], pubs: List[Dict[str, Any]]) -> Tuple[float, List[str], float]:
     if not pubs or not interests_tokens: return 0.0, [], 1.0
