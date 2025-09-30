@@ -8,6 +8,7 @@ import re
 import json
 
 from .database import Base, engine, get_db
+from dotenv import load_dotenv
 from . import crud
 from . import models
 from .seed_json import seed_from_json  # reuse JSON seeder when available
@@ -22,6 +23,9 @@ from .email_utils import build_email, send_email_with_attachment
 import httpx
 import re
 from urllib.parse import urljoin
+
+# Load environment from .env (for SMTP, etc.)
+load_dotenv()
 
 # ---- App & CORS ----
 app = FastAPI(title="LabLink DB API", version="1.0.0")

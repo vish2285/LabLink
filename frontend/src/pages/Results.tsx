@@ -17,9 +17,13 @@ export default function Results() {
     show: { opacity: 1, transition: { staggerChildren: 0.06 } },
   }
   const item = {
-    hidden: { opacity: 0, y: 8 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+    hidden: { opacity: 0, y: 24, scale: 0.96 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.25 } },
   }
+  const itemHiddenUntil = (d: number) => ({
+    hidden: { opacity: 0, y: 24, scale: 0.96 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { delay: d, duration: 0.25 } },
+  })
 
   function handleSelect(index: number) {
     const prof = results[index]
@@ -28,7 +32,6 @@ export default function Results() {
     setEmailDraft('')
     navigate('/email')
   }
-
   if (!results?.length) return <EmptyState />
 
   return (
@@ -57,30 +60,64 @@ export default function Results() {
           {/* Top 3 Ranking */}
           {results.length > 0 && (
             <motion.div className="mb-10" variants={container} initial="hidden" animate="show">
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-3 items-stretch">
+                {/* Second on left (hidden until its time) */}
+                <div className="hidden md:block">
+                  {results[1] && (
+                    <motion.div variants={itemHiddenUntil(0.2)} initial="hidden" animate="show">
+                      <ProfessorCard professor={results[1]} onSelect={() => handleSelect(1)} rank={2} />
+                    </motion.div>
+                  )}
+                </div>
+                {/* First in center with brief glow */}
+                <motion.div className="relative" variants={item} transition={{ delay: 0.0, duration: 0.25 }}>
+                  {/* glow */}
+                  <motion.div
+                    className="pointer-events-none absolute -inset-3 rounded-2xl"
+                    initial={{ opacity: 0.45, scale: 0.98 }}
+                    animate={{ opacity: 0, scale: 1 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    style={{
+                      background:
+                        'radial-gradient(60% 60% at 50% 50%, rgba(124,196,255,0.25), rgba(124,196,255,0) 60%)',
+                      filter: 'blur(12px)'
+                    }}
+                  />
+                  <ProfessorCard professor={results[0]} onSelect={() => handleSelect(0)} rank={1} />
+                </motion.div>
+                {/* Third on right (hidden until its time) */}
+                <div className="hidden md:block">
+                  {results[2] && (
+                    <motion.div variants={itemHiddenUntil(0.4)} initial="hidden" animate="show">
+                      <ProfessorCard professor={results[2]} onSelect={() => handleSelect(2)} rank={3} />
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+              {/* Fallback layout on mobile: show 1, then 2, then 3 stacked */}
+              <div className="md:hidden grid gap-4">
+                <motion.div className="relative" variants={item} transition={{ delay: 0.0, duration: 0.25 }}>
+                  <motion.div
+                    className="pointer-events-none absolute -inset-3 rounded-2xl"
+                    initial={{ opacity: 0.45, scale: 0.98 }}
+                    animate={{ opacity: 0, scale: 1 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    style={{
+                      background:
+                        'radial-gradient(60% 60% at 50% 50%, rgba(124,196,255,0.25), rgba(124,196,255,0) 60%)',
+                      filter: 'blur(12px)'
+                    }}
+                  />
+                  <ProfessorCard professor={results[0]} onSelect={() => handleSelect(0)} rank={1} />
+                </motion.div>
                 {results[1] && (
-                  <motion.div variants={item}>
-                    <ProfessorCard
-                      professor={results[1]}
-                      onSelect={() => handleSelect(1)}
-                      rank={2}
-                    />
+                  <motion.div variants={item} transition={{ delay: 0.2, duration: 0.25 }}>
+                    <ProfessorCard professor={results[1]} onSelect={() => handleSelect(1)} rank={2} />
                   </motion.div>
                 )}
-                <motion.div variants={item}>
-                  <ProfessorCard
-                    professor={results[0]}
-                    onSelect={() => handleSelect(0)}
-                    rank={1}
-                  />
-                </motion.div>
                 {results[2] && (
-                  <motion.div variants={item}>
-                    <ProfessorCard
-                      professor={results[2]}
-                      onSelect={() => handleSelect(2)}
-                      rank={3}
-                    />
+                  <motion.div variants={item} transition={{ delay: 0.4, duration: 0.25 }}>
+                    <ProfessorCard professor={results[2]} onSelect={() => handleSelect(2)} rank={3} />
                   </motion.div>
                 )}
               </div>

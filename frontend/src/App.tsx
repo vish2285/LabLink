@@ -6,6 +6,8 @@ import ProfessorDetail from './pages/ProfessorDetail'
 import Header from './components/Header.tsx'
 import Landing from './pages/Landing.tsx'
 import Footer from './components/Footer.tsx'
+import About from './pages/About.tsx'
+import Feedback from './pages/Feedback.tsx'
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
             <Route path="/results" element={<Results />} />
             <Route path="/professor/:id" element={<ProfessorDetail />} />
             <Route path="/email" element={<EmailEditor />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/feedback" element={<Feedback />} />
           </Routes>
         </main>
         <Footer />

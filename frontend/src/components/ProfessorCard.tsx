@@ -22,6 +22,12 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
         ? 'from-amber-500 to-orange-600'
         : 'from-blue-600 to-indigo-700'
 
+  const rankSizeClass = rank === 1
+    ? 'h-10 w-10 text-base'
+    : rank === 2
+      ? 'h-9 w-9 text-sm'
+      : 'h-8 w-8 text-sm'
+
   // Consistent borders; tiered elevation by rank
   const containerAccent = rank === 1
     ? 'border-gray-200 shadow-lg'
@@ -35,7 +41,7 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
     <div className={`relative rounded-xl border border-white/10 bg-white/5 ${containerAccent} transition-transform duration-300 ease-out hover:-translate-y-1 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/20 will-change-transform`}>
       {typeof rank === 'number' && (
         <div className="absolute -top-3 -left-3">
-          <div className={`h-8 w-8 rounded-full bg-gradient-to-br ${rankBadgeClass} text-white text-sm font-bold flex items-center justify-center shadow-md`}>
+          <div className={`${rankSizeClass} rounded-full bg-gradient-to-br ${rankBadgeClass} text-white font-bold flex items-center justify-center shadow-md`}>
             {rank}
           </div>
         </div>
