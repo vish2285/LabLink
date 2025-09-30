@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 export default function EmptyState() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="flex items-center justify-center bg-gray-50 py-16 min-h-[60vh]">
       <div className="mx-auto w-full max-w-3xl rounded-xl border bg-white p-6 shadow-sm text-center">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">No matches yet</h2>
         <p className="text-gray-600 mb-6">Let's find your perfect research match.</p>

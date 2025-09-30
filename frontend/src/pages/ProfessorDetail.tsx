@@ -5,6 +5,7 @@ import type { Professor } from '../types'
 import { useApp } from '../context/AppContext'
 import Avatar from '../components/Avatar'
 import { TagList } from '../components/Tag'
+import { FiExternalLink, FiMail } from 'react-icons/fi'
 
 export default function ProfessorDetail() {
   const { id } = useParams()
@@ -44,6 +45,52 @@ export default function ProfessorDetail() {
       `Best,\n[Your Name]`
     setEmailDraft(draft)
     navigate('/email')
+  }
+
+  function normalizePubLink(title?: string, raw?: string): string | undefined {
+    const t = (raw || '').trim()
+    const scholar = (q: string) => `https://scholar.google.com/scholar?q=${encodeURIComponent(q)}`
+    if (!t) return title ? scholar(title) : undefined
+
+    // DOI
+    if (/^10\.\d{4,9}\/.+/i.test(t)) return `https://doi.org/${t}`
+    const doiMatch = t.match(/^doi:\s*(10\.[^\s]+)/i)
+    if (doiMatch) return `https://doi.org/${doiMatch[1]}`
+
+    // arXiv
+    const arx1 = t.match(/^arxiv:\s*(\d{4}\.\d{4,5}(v\d+)?)/i)
+    if (arx1) return `https://arxiv.org/abs/${arx1[1]}`
+    if (/^\d{4}\.\d{4,5}(v\d+)?$/i.test(t)) return `https://arxiv.org/abs/${t}`
+
+    // Protocol-relative
+    if (t.startsWith('//')) return `https:${t}`
+
+    // Absolute URL
+    try {
+      const u = new URL(t)
+      return u.toString()
+    } catch {}
+
+    // Root-relative path: resolve against professor site if available
+    if (t.startsWith('/')) {
+      const base = professor?.profile_link
+      if (base) {
+        try {
+          const b = new URL(base)
+          return `${b.origin}${t}`
+        } catch {}
+      }
+      return title ? scholar(title) : undefined
+    }
+
+    // Try prefixing https:// and validate
+    try {
+      const u2 = new URL(`https://${t}`)
+      return u2.toString()
+    } catch {}
+
+    // Fallback
+    return scholar(title || t)
   }
 
   if (loading) {
@@ -96,6 +143,33 @@ export default function ProfessorDetail() {
               <TagList items={professor.skills} max={24} />
             </div>
           ) : null}
+
+          {professor.recent_publications?.length ? (
+            <div className="rounded-xl border bg-white p-5">
+              <h2 className="mb-3 text-lg font-semibold text-gray-900">Recent Publications</h2>
+              <ul className="space-y-4">
+                {professor.recent_publications.slice(0, 6).map((pub, i) => (
+                  <li key={i} className="border-b last:border-b-0 pb-4 last:pb-0">
+                    <div className="flex items-baseline justify-between gap-3">
+                      {normalizePubLink(pub.title, pub.link) ? (
+                        <a href={normalizePubLink(pub.title, pub.link)} target="_blank" rel="noopener noreferrer" className="font-medium text-gray-900 hover:underline">
+                          {pub.title || 'Untitled'}
+                        </a>
+                      ) : (
+                        <span className="font-medium text-gray-900">{pub.title || 'Untitled'}</span>
+                      )}
+                      {typeof pub.year === 'number' && (
+                        <span className="text-xs text-gray-500">{pub.year}</span>
+                      )}
+                    </div>
+                    {pub.abstract && (
+                      <p className="mt-1 text-sm text-gray-600 line-clamp-3">{pub.abstract}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
 
         <aside className="space-y-4">
@@ -125,17 +199,20 @@ export default function ProfessorDetail() {
                   className="inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-gray-50"
                 >
                   View Site
+                  <FiExternalLink className="ml-2 h-4 w-4 opacity-80" />
                 </a>
               ) : (
                 <button className="inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm font-semibold opacity-60 cursor-not-allowed">
                   View Site
+                  <FiExternalLink className="ml-2 h-4 w-4 opacity-60" />
                 </button>
               )}
               <button
                 onClick={handleConnect}
                 className="inline-flex items-center justify-center rounded-lg bg-[#002855] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
               >
-                Connect
+                <FiMail className="mr-2 h-4 w-4 text-white/90" />
+                Draft Email
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import os
 import re
+import json
 
 from .database import Base, engine, get_db
 from . import crud
@@ -38,6 +39,34 @@ VECSTORE: VectorStore | None = None
 DOCS: list[str] = []
 PROF_IDS: list[int] = []
 
+def extract_publications(p) -> list[dict]:
+    """Return publications as list of dicts from ORM relation or JSON fallback."""
+    try:
+        if getattr(p, "publications", None):
+            return [
+                {
+                    "title": d.title,
+                    "abstract": d.abstract,
+                    "year": d.year,
+                    "link": d.link,
+                }
+                for d in p.publications
+            ]
+        # Fallback to JSON stored in Professor.recent_publications
+        data = json.loads(getattr(p, "recent_publications", "[]") or "[]")
+        pubs: list[dict] = []
+        for d in data or []:
+            if isinstance(d, dict):
+                pubs.append({
+                    "title": d.get("title"),
+                    "abstract": d.get("abstract"),
+                    "year": d.get("year"),
+                    "link": d.get("link"),
+                })
+        return pubs
+    except Exception:
+        return []
+
 def rebuild_vectorstore(db: Session):
     global VECSTORE, DOCS, PROF_IDS
     profs = crud.list_professors(db)
@@ -46,7 +75,7 @@ def rebuild_vectorstore(db: Session):
     payloads = []
     for p in profs:
         skills = [ps.skill.name for ps in p.professor_skills]
-        pubs = [{"title": d.title, "abstract": d.abstract, "year": d.year, "link": d.link} for d in p.publications]
+        pubs = extract_publications(p)
         payloads.append({
             "research_interests": p.research_interests or "",
             "recent_publications": pubs,
@@ -66,7 +95,8 @@ def pct(x: float) -> float: return round(clamp01(x) * 100.0, 2)
 
 def to_prof_out(p) -> ProfessorOut:
     skills = [ps.skill.name for ps in p.professor_skills]
-    pubs = [PublicationOut(title=d.title, abstract=d.abstract, year=d.year, link=d.link) for d in p.publications]
+    pub_dicts = extract_publications(p)
+    pubs = [PublicationOut(**d) for d in pub_dicts]
     return ProfessorOut(
         id=p.id, name=p.name, department=p.department, email=p.email,
         research_interests=p.research_interests, profile_link=p.profile_link,
@@ -150,7 +180,7 @@ def match_professors(
         f1 = (2 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
         skill_score = (0.7 * f1) + (0.3 * jac)
 
-        pubs_list = [{"title": d.title, "abstract": d.abstract, "year": d.year, "link": d.link} for d in p.publications]
+        pubs_list = extract_publications(p)
         pub_base, pub_hits, bonus = pubs_score(interest_tokens, pubs_list)
 
         # Collect phrase hits for interests (use multi-word phrases where applicable)
