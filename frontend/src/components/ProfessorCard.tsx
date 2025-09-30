@@ -96,16 +96,16 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
         <div className="mt-2 grid grid-cols-2 gap-3">
           <button
             onClick={() => navigate(`/professor/${professor.id}`)}
-            className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50`}
+            className={`inline-flex items-center justify-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-gray-50 whitespace-nowrap`}
           >
-            <FiExternalLink className="w-4 h-4" />
+            <FiExternalLink className="w-3 h-3" />
             View Profile
           </button>
           <button
             onClick={onSelect}
-            className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white bg-[#002855] hover:opacity-90`}
+            className={`inline-flex items-center justify-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium text-white bg-[#002855] hover:opacity-90 whitespace-nowrap`}
           >
-            <FiMail className="w-4 h-4" />
+            <FiMail className="w-3 h-3" />
             Draft Email
           </button>
         </div>

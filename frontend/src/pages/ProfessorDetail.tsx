@@ -190,28 +190,28 @@ export default function ProfessorDetail() {
               )}
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-2 gap-2">
               {professor.profile_link ? (
                 <a
                   href={professor.profile_link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-gray-50"
+                  className="inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-gray-50 whitespace-nowrap"
                 >
                   View Site
-                  <FiExternalLink className="ml-2 h-4 w-4 opacity-80" />
+                  <FiExternalLink className="ml-1 h-3 w-3 opacity-80" />
                 </a>
               ) : (
-                <button className="inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm font-semibold opacity-60 cursor-not-allowed">
+                <button className="inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-xs font-medium opacity-60 cursor-not-allowed whitespace-nowrap">
                   View Site
-                  <FiExternalLink className="ml-2 h-4 w-4 opacity-60" />
+                  <FiExternalLink className="ml-1 h-3 w-3 opacity-60" />
                 </button>
               )}
               <button
                 onClick={handleConnect}
-                className="inline-flex items-center justify-center rounded-lg bg-[#002855] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                className="inline-flex items-center justify-center rounded-md bg-[#002855] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 whitespace-nowrap"
               >
-                <FiMail className="mr-2 h-4 w-4 text-white/90" />
+                <FiMail className="mr-1 h-3 w-3 text-white/90" />
                 Draft Email
               </button>
             </div>
