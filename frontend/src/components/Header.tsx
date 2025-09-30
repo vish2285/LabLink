@@ -42,7 +42,8 @@ export default function Header() {
           </button>
 
           <Link to="/" className="flex items-center gap-2 text-gray-900">
-            <span className="text-lg font-semibold">Cownect</span>
+            <img src="/lablink.png" alt="LabLink logo" className="h-10 w-10" />
+            <span className="text-xl font-semibold ">LabLink</span>
           </Link>
         </div>
 

@@ -1,13 +1,16 @@
-# 🚀 Cownect FastAPI (JSON-backed, skills-aware matching)
+# 🚀 LabLink FastAPI (JSON-backed, skills-aware matching)
 from fastapi import FastAPI, Depends, HTTPException, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import os
+import csv
 import re
 import json
 
 from .database import Base, engine, get_db
 from . import crud
+from . import models
+from .seed_json import seed_from_json  # reuse JSON seeder when available
 from .schema import (
     ProfessorOut, PublicationOut, StudentProfileIn,
     MatchResponse, MatchItem, EmailRequest, EmailDraft
@@ -21,7 +24,7 @@ import re
 from urllib.parse import urljoin
 
 # ---- App & CORS ----
-app = FastAPI(title="Cownect DB API", version="1.0.0")
+app = FastAPI(title="LabLink DB API", version="1.0.0")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -87,7 +90,61 @@ def rebuild_vectorstore(db: Session):
 @app.on_event("startup")
 def startup():
     with next(get_db()) as db:  # type: ignore
-        rebuild_vectorstore(db)
+        # Auto-seed DB if empty from JSON (preferred) or CSV fallback
+        try:
+            has_prof = db.query(models.Professor).first() is not None
+            if not has_prof:
+                here = os.path.dirname(os.path.abspath(__file__))
+                json_candidates = [
+                    os.path.join(here, "data", "professors.json"),
+                    os.path.join(here, "professors.json"),
+                ]
+                seeded = False
+                for jp in json_candidates:
+                    if os.path.isfile(jp):
+                        seed_from_json(jp)
+                        seeded = True
+                        break
+                if not seeded:
+                    csv_path = os.path.join(here, "professors.csv")
+                    if os.path.isfile(csv_path) and os.path.getsize(csv_path) > 0:
+                        try:
+                            # Minimal CSV seeding
+                            with open(csv_path, newline="", encoding="utf-8") as f:
+                                reader = csv.DictReader(f)
+                                for i, row in enumerate(reader, start=1):
+                                    name = (row.get("name") or "").strip()
+                                    if not name:
+                                        continue
+                                    dept = (row.get("dept") or row.get("department") or "").strip()
+                                    email = (row.get("email") or "").strip()
+                                    interests = (row.get("interests") or "").strip()
+                                    pubs_raw = (row.get("publications") or "").strip()
+                                    pubs = []
+                                    if pubs_raw:
+                                        # Split on semicolon or pipe
+                                        parts = re.split(r"[;|]", pubs_raw)
+                                        for p in parts:
+                                            t = (p or "").strip()
+                                            if t:
+                                                pubs.append({"title": t})
+                                    db.add(models.Professor(
+                                        name=name,
+                                        department=dept or None,
+                                        email=email or None,
+                                        research_interests=interests or None,
+                                        profile_link=None,
+                                        photo_url="",
+                                        recent_publications=json.dumps(pubs),
+                                    ))
+                                db.commit()
+                        except Exception:
+                            db.rollback()
+            # After potential seeding, rebuild vector store
+            rebuild_vectorstore(db)
+        except Exception:
+            # Ensure we don't block startup on seeding issues
+            rebuild_vectorstore(db)
 
 # ---- Helpers ----
 def clamp01(x: float) -> float: return max(0.0, min(1.0, x))
