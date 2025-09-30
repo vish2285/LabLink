@@ -10,7 +10,7 @@ export default function Landing() {
   return (
     <section className="relative overflow-hidden">
       <CursorGrid />
-      <div className="relative mx-auto max-w-screen-xl gap-12 px-4 py-24 sm:py-28 md:py-32 text-slate-300 md:px-8">
+      <div className="relative mx-auto max-w-screen-xl gap-12 px-4 pt-20 pb-24 sm:pt-24 sm:pb-28 md:pt-28 md:pb-32 text-slate-300 md:px-8">
         <div className="mx-auto max-w-4xl space-y-5 text-center">
           <span className="inline-block rounded-full border border-white/20 px-4 py-1 text-xs tracking-wide text-slate-300">Built for Aggies</span>
           <h1 className="mx-auto text-4xl sm:text-5xl md:text-7xl font-extrabold text-white leading-tight">
@@ -20,6 +20,9 @@ export default function Landing() {
           <p className="mx-auto max-w-2xl text-slate-300/90 text-lg">
             Tell us your interests and skills. LabLink surfaces matching faculty and drafts your first outreach email.
           </p>
+          <div className="mx-auto max-w-md rounded-md border border-white/20 bg-white/5 px-4 py-2 text-sm text-slate-300">
+            We’re actively adding more departments. Check back for expanded coverage.
+          </div>
           <div className="items-center justify-center gap-x-3 space-y-3 sm:flex sm:space-y-0">
             <Button asChild>
               <a href="/profile">Create your profile</a>

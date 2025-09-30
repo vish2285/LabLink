@@ -23,7 +23,7 @@ def build_email(student_name: str, student_skills: str | None, availability: str
        f"My name is {student_name}, and I am an [undergraduate or graduate] at UC Davis interested in your work on {t}.{paper_line} "
        f"I would be eager to contribute to your research and apply my experience in {skills}. "
        f"I am available to start {avail} and would greatly appreciate the opportunity to discuss how I could support your lab.\n\n"
-       f"I have attached my [CV or transcript or both] for your reference.\n"
+       f"I have attached my resume for your reference.\n"
        f"Thank you for your time and consideration.\n\n"
        f"Best regards,\n{student_name}"
    )

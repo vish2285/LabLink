@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="bg-slate-900/60 border-t border-white/10 py-5 text-slate-300">
+    <footer className="bg-slate-900/60 backdrop-blur border-t border-white/10 py-5 text-slate-300">
       <div className="mx-auto max-w-screen-xl px-4 md:px-8">
         <div className="flex flex-col items-center justify-between gap-2 sm:flex-row">
           <div className="text-base font-semibold text-white"><span className="text-[#FFBF00]">Lab</span>Link</div>
