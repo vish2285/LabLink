@@ -5,10 +5,10 @@ import { matchProfessors, fetchDepartments } from '../lib/api'
 
 export default function ProfileForm() {
   const navigate = useNavigate()
-  const { setProfile, setResults } = useApp()
-  const [interests, setInterests] = useState('')
-  const [skills, setSkills] = useState('')
-  const [department, setDepartment] = useState('')
+  const { setProfile, setResults, profile } = useApp()
+  const [interests, setInterests] = useState(profile?.interests || '')
+  const [skills, setSkills] = useState(profile?.skills || '')
+  const [department, setDepartment] = useState(profile?.department || '')
   const [departments, setDepartments] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,6 +46,7 @@ export default function ProfileForm() {
       const payload = {
         interests: interests.trim(),
         skills: skills.trim(),
+        department: department || undefined,
       }
       setProfile(payload)
       const results = await matchProfessors(payload, department || undefined)

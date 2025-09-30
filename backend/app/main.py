@@ -131,7 +131,7 @@ def reload_docs(db: Session = Depends(get_db)):
 @app.post("/api/match", response_model=MatchResponse)
 def match_professors(
     profile: StudentProfileIn = Body(...),
-    top_k: int = Query(10, ge=1, le=50),
+    top_k: int | None = Query(None, ge=1, le=50),
     department: str | None = Query(None),
     w_interests: float = Query(0.55, ge=0.0, le=1.0),
     w_skills: float = Query(0.35, ge=0.0, le=1.0),
@@ -212,8 +212,14 @@ def match_professors(
 
     scored.sort(reverse=True, key=lambda x: (x[0], x[1], x[2]))
 
+    # If caller passed top_k, honor it; otherwise return all meaningful matches
+    if top_k is not None:
+        selected = scored[:top_k]
+    else:
+        selected = [t for t in scored if t[0] > 0.0]
+
     matches = []
-    for final, _, __, p, why in scored[:top_k]:
+    for final, _, __, p, why in selected:
         matches.append(MatchItem(
             score=round(final, 6),
             score_percent=pct(final),

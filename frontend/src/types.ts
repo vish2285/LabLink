@@ -23,6 +23,7 @@ export type StudentProfile = {
   interests: string;
   skills?: string;
   availability?: string;
+  department?: string;
 };
 
 export type MatchItem = {
