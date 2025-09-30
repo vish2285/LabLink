@@ -9,8 +9,8 @@ export default function Landing() {
         <div className="mx-auto max-w-4xl space-y-5 text-center">
           <h1 className="text-sm font-medium text-[#FFBF00]">Built for UC Davis students</h1>
           <h2 className="mx-auto text-4xl font-extrabold text-gray-800 md:text-5xl">
-            Find UC Davis professors aligned with your interests via
-            <span className="bg-gradient-to-r from-[#002855] to-[#FFBF00] bg-clip-text text-transparent"> ResearchMatch</span>
+            Connect with UC Davis professors aligned with your interests via
+            <span className="bg-gradient-to-r from-[#002855] to-[#FFBF00] bg-clip-text text-transparent"> Cownect</span>
           </h2>
           <p className="mx-auto max-w-2xl">
             Enter your interests and skills. We surface UC Davis faculty who match and help you send a professional outreach email.

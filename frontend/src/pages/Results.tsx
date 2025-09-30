@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
 import ProfessorCard from '../components/ProfessorCard'
 import EmptyState from '../components/EmptyState'
@@ -7,14 +8,24 @@ export default function Results() {
   const navigate = useNavigate()
   const { results, selectProfessor, setEmailDraft } = useApp()
 
+  const page = {
+    hidden: { opacity: 0, y: 12 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  }
+  const container = {
+    hidden: { opacity: 1 },
+    show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+  }
+  const item = {
+    hidden: { opacity: 0, y: 8 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+  }
+
   function handleSelect(index: number) {
     const prof = results[index]
     selectProfessor(prof)
-    const draft = `Hello Professor ${prof.name},\n\n` +
-      `I'm a student interested in ${prof.research_interests || 'your research areas'}. ` +
-      `I'd love to learn more about opportunities to contribute to your lab.\n\n` +
-      `Best,\n[Your Name]`
-    setEmailDraft(draft)
+    // Open EmailEditor with an empty body; user can generate from there
+    setEmailDraft('')
     navigate('/email')
   }
 
@@ -23,7 +34,12 @@ export default function Results() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 pb-6">
+      <motion.div
+        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 pb-6"
+        variants={page}
+        initial="hidden"
+        animate="show"
+      >
         <div className="text-center space-y-2">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Top Matches</h1>
           <p className="text-gray-600">Discover UC Davis professors aligned with your interests and skills.</p>
@@ -33,56 +49,69 @@ export default function Results() {
             <span>{results.length} matches found</span>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Results Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         <div className="grid gap-6 md:gap-8">
           {/* Top 3 Ranking */}
           {results.length > 0 && (
-            <div className="mb-10">
-              
+            <motion.div className="mb-10" variants={container} initial="hidden" animate="show">
               <div className="grid gap-4 md:grid-cols-3">
                 {results[1] && (
-                  <ProfessorCard
-                    professor={results[1]}
-                    onSelect={() => handleSelect(1)}
-                    rank={2}
-                  />
+                  <motion.div variants={item}>
+                    <ProfessorCard
+                      professor={results[1]}
+                      onSelect={() => handleSelect(1)}
+                      rank={2}
+                    />
+                  </motion.div>
                 )}
-                <ProfessorCard
-                  professor={results[0]}
-                  onSelect={() => handleSelect(0)}
-                  rank={1}
-                />
-                {results[2] && (
+                <motion.div variants={item}>
                   <ProfessorCard
-                    professor={results[2]}
-                    onSelect={() => handleSelect(2)}
-                    rank={3}
+                    professor={results[0]}
+                    onSelect={() => handleSelect(0)}
+                    rank={1}
                   />
+                </motion.div>
+                {results[2] && (
+                  <motion.div variants={item}>
+                    <ProfessorCard
+                      professor={results[2]}
+                      onSelect={() => handleSelect(2)}
+                      rank={3}
+                    />
+                  </motion.div>
                 )}
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Other Matches */}
-          {results.length > 1 && (
+          {results.length > 3 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-px flex-1 bg-gray-200" />
                 <span className="text-sm font-medium text-gray-700">More Matches</span>
                 <div className="h-px flex-1 bg-gray-200" />
               </div>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {results.slice(3).map((professor, index) => (
-                  <ProfessorCard
-                    key={index + 3}
-                    professor={professor}
-                    onSelect={() => handleSelect(index + 3)}
-                  />
-                ))}
-              </div>
+              <AnimatePresence mode="sync">
+                <motion.div
+                  className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+                  variants={container}
+                  initial="hidden"
+                  animate="show"
+                >
+                  {results.slice(3).map((professor, index) => (
+                    <motion.div key={index + 3} variants={item}>
+                      <ProfessorCard
+                        professor={professor}
+                        onSelect={() => handleSelect(index + 3)}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
             </div>
           )}
         </div>

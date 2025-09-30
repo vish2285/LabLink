@@ -42,7 +42,7 @@ export default function Header() {
           </button>
 
           <Link to="/" className="flex items-center gap-2 text-gray-900">
-            <span className="text-lg font-semibold">ResearchMatch</span>
+            <span className="text-lg font-semibold">Cownect</span>
           </Link>
         </div>
 

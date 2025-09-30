@@ -39,11 +39,8 @@ export default function ProfessorDetail() {
   function handleConnect() {
     if (!professor) return
     selectProfessor(professor)
-    const draft = `Hello Professor ${professor.name},\n\n` +
-      `I'm a student interested in ${professor.research_interests || 'your research areas'}. ` +
-      `I'd love to learn more about opportunities to contribute to your lab.\n\n` +
-      `Best,\n[Your Name]`
-    setEmailDraft(draft)
+    // Open EmailEditor with an empty body; user can generate from there
+    setEmailDraft('')
     navigate('/email')
   }
 

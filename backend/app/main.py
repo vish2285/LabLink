@@ -1,4 +1,4 @@
-# 🚀 ResearchMatch FastAPI (JSON-backed, skills-aware matching)
+# 🚀 Cownect FastAPI (JSON-backed, skills-aware matching)
 from fastapi import FastAPI, Depends, HTTPException, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -21,7 +21,7 @@ import re
 from urllib.parse import urljoin
 
 # ---- App & CORS ----
-app = FastAPI(title="ResearchMatch DB API", version="1.0.0")
+app = FastAPI(title="Cownect DB API", version="1.0.0")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 app.add_middleware(
     CORSMiddleware,
