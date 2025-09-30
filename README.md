@@ -1,53 +1,91 @@
-# ResearchMatch 🔎🎓
-A full-stack app that helps UC students find professors whose research aligns with their interests, and generates personalized outreach emails to connect with them.  
-Built with **React (Vite)** + **FastAPI** + **Postgres/SQLite**.
+# LabLink 🔎🧪
+Connect UC Davis students with professors aligned to their research interests, and draft a polished outreach email in one flow.
+
+Built with **React (Vite + TypeScript + Tailwind)** and **FastAPI + SQLAlchemy + SQLite**.
 
 ---
 
 ## 🚀 Features
-- Student profile input (interests, skills, availability).  
-- Professor database (name, department, interests, recent publications).  
-- AI-powered matching engine (TF-IDF or embeddings).  
-- Ranked list of top professors with publications.  
-- One-click outreach email draft (editable + professional).  
-- Deployable on **Vercel (frontend)** + **Railway/Render (backend)**.
+- Profile: interests, skills, optional department
+- Results: ranked matches with “why it matches” highlights
+- Detail: professor profile, publications, skill tags
+- Email: generate a tailored message; send via SMTP with attachment (CV)
+- Polished UI: dark theme, responsive, subtle animations (Framer Motion)
 
 ---
 
 ## 🗂 Tech Stack
-- **Frontend**: React + Vite + TypeScript, TailwindCSS  
-- **Backend**: FastAPI, Python, scikit-learn (TF-IDF), SQLAlchemy  
-- **Database**: SQLite (dev), Postgres (prod)  
-- **Optional AI**: OpenAI embeddings + LLM for polished emails  
-- **Deployment**: Vercel + Railway  
+- Frontend: React 19, Vite, TypeScript, Tailwind, Framer Motion
+- Backend: FastAPI, SQLAlchemy, rank-bm25, optional scikit-learn
+- Database: SQLite (local). Postgres can be added in prod
+- Email: SMTP (Gmail app password) or swap to SendGrid
 
 ---
 
 ## 🏗️ Project Structure
 
-researchmatch/
-|─ backend/
-|  ├─ app/
-|  │  ├─ __init__.py         # marks app/ as a Python package
-|  │  ├─ main.py             # 🚀 FastAPI entry point (routes, CORS, app startup)
-|  │  ├─ database.py         # ⚙️ SQLAlchemy DB engine + session setup
-|  │  ├─ models.py           # 🗄️ SQLAlchemy models (Professor, Student, Match tables)
-|  │  ├─ crud.py             # 🛠️ CRUD functions (create student, list professors, etc.)
-|  │  ├─ match.py            # 🔍 Matching engine (TF-IDF / embeddings)
-|  │  ├─ import_json.py      # 📥 Seeder script to load professors.json into DB
-|  │  └─ professors.json     # 📑 Seed dataset with professors + publications
-|  │
-|  ├─ requirements.txt       # 📦 Backend dependencies (FastAPI, SQLAlchemy, scikit-learn, etc.)
-|  ├─ venv/                  # (local only) Python virtual environment
-|  └─ professors.db          # (generated) SQLite DB file after first run
-├─ frontend/
-│  ├─ src/
-│  │  ├─ App.jsx
-│  │  ├─ pages/
-│  │  │  ├─ ProfileForm.jsx
-│  │  │  ├─ Results.jsx
-│  │  │  └─ EmailEditor.jsx
-│  │  └─ api.js
-│  ├─ package.json
-│  └─ README.md
-└─ README.md
+```
+LabLink/
+├─ backend/
+│  ├─ app/
+│  │  ├─ main.py            # FastAPI app, routes, seeding, CORS
+│  │  ├─ schema.py          # Pydantic models
+│  │  ├─ models.py          # SQLAlchemy models
+│  │  ├─ crud.py            # DB access helpers
+│  │  ├─ matching.py        # Vector store + scoring
+│  │  ├─ email_utils.py     # Draft builder + SMTP send
+│  │  └─ data/              # optional JSON seed
+│  ├─ requirements.txt
+│  └─ professors.db         # generated SQLite
+└─ frontend/
+   ├─ src/
+   │  ├─ pages/ (Landing, ProfileForm, Results, ProfessorDetail, EmailEditor, About, Feedback)
+   │  ├─ components/ (Button, ProfessorCard, Avatar, FAQ, etc.)
+   │  └─ context/ (AppContext)
+   └─ public/lablink.png    # favicon/app icon
+```
+
+## 🔧 Local Setup
+
+Frontend
+```
+cd frontend
+npm install
+npm run dev
+```
+
+Backend
+```
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Create `backend/.env` (Gmail SMTP example)
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=yourgmail@gmail.com
+SMTP_PASSWORD=your_app_password
+SMTP_FROM=yourgmail@gmail.com
+ALLOWED_ORIGINS=http://localhost:5173
+```
+
+Run API
+```
+uvicorn app.main:app --reload --port 8000
+```
+
+## ✨ Usage
+1. Fill Profile (interests/skills/department)
+2. Review Results (top 3 emphasized with subtle animations)
+3. Open Email (generate draft, edit)
+4. Attach CV (optional) and Send Email (SMTP) or open in Mail
+
+## 🔐 Notes
+- For Gmail, enable 2‑Step Verification and use an App Password
+- Or swap to SendGrid/SES by replacing the SMTP sender in `email_utils.py`
+
+## 📄 License
+MIT

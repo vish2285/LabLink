@@ -12,7 +12,7 @@ export default function Landing() {
       <CursorGrid />
       <div className="relative mx-auto max-w-screen-xl gap-12 px-4 py-24 sm:py-28 md:py-32 text-slate-300 md:px-8">
         <div className="mx-auto max-w-4xl space-y-5 text-center">
-          <span className="inline-block rounded-full border border-white/20 px-4 py-1 text-xs tracking-wide text-slate-300">Built for UC Davis students</span>
+          <span className="inline-block rounded-full border border-white/20 px-4 py-1 text-xs tracking-wide text-slate-300">Built for Aggies</span>
           <h1 className="mx-auto text-4xl sm:text-5xl md:text-7xl font-extrabold text-white leading-tight">
             Find professors aligned with your research focus via
             <span className="bg-gradient-to-r from-[#7cc4ff] to-[#FFBF00] bg-clip-text text-transparent"> LabLink</span>
