@@ -3,6 +3,7 @@ import Avatar from './Avatar'
 import MatchScoreBadge from './MatchScoreBadge'
 import { TagList } from './Tag'
 import { FiExternalLink, FiMail } from 'react-icons/fi'
+import Button from './Button'
 
 export type ProfessorCardProps = {
   professor: any
@@ -39,8 +40,8 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
           </div>
         </div>
       )}
-      <div className="p-6">
-        <div className={`flex items-start justify-between mb-6`}>
+      <div className="p-4 sm:p-6">
+        <div className={`flex items-start justify-between mb-4 sm:mb-6`}>
           <div className="flex-1">
             <div className="mb-3">
               {/* Slightly larger avatar for top match */}
@@ -48,7 +49,7 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
                 <Avatar name={professor.name} photoUrl={professor.photo_url} />
               </div>
             </div>
-            <h3 className={`${centered ? 'text-2xl md:text-3xl' : 'text-xl'} font-semibold text-white mb-1`}>{professor.name}</h3>
+            <h3 className={`${centered ? 'text-2xl md:text-3xl' : 'text-lg sm:text-xl'} font-semibold text-white mb-1`}>{professor.name}</h3>
             {professor.department && (
               <p className="text-slate-300 font-medium text-sm mb-2">{professor.department}</p>
             )}
@@ -93,21 +94,15 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
           </div>
         )}
 
-        <div className="mt-2 grid grid-cols-2 gap-3">
-          <button
-            onClick={() => navigate(`/professor/${professor.id}`)}
-            className={`inline-flex items-center justify-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-white/10 whitespace-nowrap`}
-          >
-            <FiExternalLink className="w-3 h-3" />
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/professor/${professor.id}`)}>
+            <FiExternalLink className="w-3 h-3 mr-1" />
             View Profile
-          </button>
-          <button
-            onClick={onSelect}
-            className={`inline-flex items-center justify-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium text-white bg-[#1e3a8a] hover:bg-[#2544a0] whitespace-nowrap`}
-          >
-            <FiMail className="w-3 h-3" />
+          </Button>
+          <Button size="sm" onClick={onSelect}>
+            <FiMail className="w-3 h-3 mr-1" />
             Draft Email
-          </button>
+          </Button>
         </div>
       </div>
     </div>

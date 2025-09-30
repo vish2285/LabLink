@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import Button from '../components/Button'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { matchProfessors, fetchDepartments } from '../lib/api'
@@ -100,13 +101,9 @@ export default function ProfileForm() {
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
           <div className="flex justify-center w-full">
-            <button
-              type="submit"
-              className="rounded-lg bg-[#1e3a8a] px-5 py-2.5 text-white shadow hover:bg-[#2544a0] disabled:opacity-60"
-              disabled={loading}
-            >
+            <Button type="submit" disabled={loading}>
               {loading ? 'Matching…' : 'Find Matches'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

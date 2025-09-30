@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FiMail, FiPaperclip, FiExternalLink, FiArrowLeft } from 'react-icons/fi'
+import Button from '../components/Button'
 import { useState as useReactState } from 'react'
 import { useApp } from '../context/AppContext'
 import { generateEmail } from '../lib/api'
@@ -67,28 +68,22 @@ export default function EmailEditor() {
           <div>
             <label className="block text-sm font-medium text-slate-200">Body</label>
             <textarea
-              className="mt-1 h-[24rem] w-full rounded-lg border border-white/20 bg-slate-900 text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+              className="mt-1 h-[18rem] sm:h-[24rem] w-full rounded-lg border border-white/20 bg-slate-900 text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
               value={body}
               onChange={e => setEmailDraft(e.target.value)}
             />
           </div>
           <div className="flex flex-wrap gap-3">
-            <button
-              className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md bg-green-600 px-4 text-sm text-white shadow-lg ring-1 ring-white/10 hover:bg-green-700 active:scale-[0.99] transition disabled:opacity-60"
-              onClick={handleGenerateEmail}
-              disabled={loading}
-            >
-              <FiMail className="h-4 w-4" />
+            <Button variant="secondary" onClick={handleGenerateEmail} disabled={loading}>
+              <FiMail className="h-4 w-4 mr-2" />
               {loading ? 'Generating…' : 'Generate Email'}
-            </button>
+            </Button>
             <label className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md border border-white/20 bg-white/5 px-4 text-sm text-slate-200 cursor-pointer hover:bg-white/10 transition">
               <input type="file" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
               <FiPaperclip className="h-4 w-4" />
               <span className="truncate max-w-[12rem]">{file ? file.name : 'Attach CV/Resume'}</span>
             </label>
-            <button
-              className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md bg-[#1e3a8a] px-4 text-sm text-white shadow-lg ring-1 ring-white/10 hover:bg-[#2544a0] active:scale-[0.99] transition disabled:opacity-60"
-              onClick={async () => {
+            <Button onClick={async () => {
                 if (!selectedProfessor) return
                 const subjectText = subject
                 const bodyText = body
@@ -101,11 +96,10 @@ export default function EmailEditor() {
                 }
                 await fetch('/api/email/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                 alert('Email sent')
-              }}
-            >
-              <FiMail className="h-4 w-4" />
+              }}>
+              <FiMail className="h-4 w-4 mr-2" />
               Send Email
-            </button>
+            </Button>
             <a
               className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md border border-white/20 bg-white/5 px-4 text-sm text-slate-200 hover:bg-white/10 transition"
               href={

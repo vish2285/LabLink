@@ -57,7 +57,7 @@ export default function Results() {
           {/* Top 3 Ranking */}
           {results.length > 0 && (
             <motion.div className="mb-10" variants={container} initial="hidden" animate="show">
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
                 {results[1] && (
                   <motion.div variants={item}>
                     <ProfessorCard
@@ -97,7 +97,7 @@ export default function Results() {
               </div>
               <AnimatePresence mode="sync">
                 <motion.div
-                  className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+                  className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                   variants={container}
                   initial="hidden"
                   animate="show"

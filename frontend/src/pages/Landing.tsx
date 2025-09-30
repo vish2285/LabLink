@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import CursorGrid from '../components/CursorGrid'
+import Button from '../components/Button'
 import { FiUserPlus, FiSearch, FiMail } from 'react-icons/fi'
 
 export default function Landing() {
@@ -9,10 +10,10 @@ export default function Landing() {
   return (
     <section className="relative overflow-hidden">
       <CursorGrid />
-      <div className="relative mx-auto max-w-screen-xl gap-12 px-4 py-32 text-slate-300 md:px-8">
+      <div className="relative mx-auto max-w-screen-xl gap-12 px-4 py-24 sm:py-28 md:py-32 text-slate-300 md:px-8">
         <div className="mx-auto max-w-4xl space-y-5 text-center">
           <span className="inline-block rounded-full border border-white/20 px-4 py-1 text-xs tracking-wide text-slate-300">Built for UC Davis students</span>
-          <h1 className="mx-auto text-5xl md:text-7xl font-extrabold text-white leading-tight">
+          <h1 className="mx-auto text-4xl sm:text-5xl md:text-7xl font-extrabold text-white leading-tight">
             Find professors aligned with your research focus via
             <span className="bg-gradient-to-r from-[#7cc4ff] to-[#FFBF00] bg-clip-text text-transparent"> LabLink</span>
           </h1>
@@ -20,12 +21,10 @@ export default function Landing() {
             Tell us your interests and skills. LabLink surfaces matching faculty and drafts your first outreach email.
           </p>
           <div className="items-center justify-center gap-x-3 space-y-3 sm:flex sm:space-y-0">
-            <a href="/profile" className="block rounded-lg bg-[#1e3a8a] py-3 px-6 font-medium text-white shadow-lg duration-150 hover:bg-[#2544a0]">
-              Create your profile
-            </a>
-            <button onClick={() => setOpen(true)} className="block rounded-lg border border-white/20 py-3 px-6 font-medium text-slate-200 duration-150 hover:bg-white/10">
-              How it works
-            </button>
+            <Button asChild>
+              <a href="/profile">Create your profile</a>
+            </Button>
+            <Button variant="ghost" onClick={() => setOpen(true)}>How it works</Button>
           </div>
         </div>
         <motion.div
