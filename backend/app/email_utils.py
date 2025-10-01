@@ -35,6 +35,7 @@ def send_email_with_attachment(
     to_email: str,
     subject: str,
     body: str,
+    reply_to: str | None = None,
     attachment_bytes: bytes | None = None,
     attachment_filename: str | None = None,
 ) -> dict:
@@ -55,6 +56,8 @@ def send_email_with_attachment(
     msg["From"] = sender
     msg["To"] = to_email
     msg["Subject"] = subject
+    if reply_to:
+        msg["Reply-To"] = reply_to
     msg.set_content(body)
 
     if attachment_bytes and attachment_filename:

@@ -109,3 +109,22 @@ export async function generateEmail(request: {
   if (!res.ok) throw new Error('Failed to generate email')
   return res.json()
 }
+
+export async function sendEmail(payload: {
+  to: string;
+  subject: string;
+  body: string;
+  filename?: string;
+  file_b64?: string;
+}): Promise<{ ok: true }> {
+  const res = await authorizedFetch('/api/email/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(text || 'Failed to send email')
+  }
+  return res.json()
+}

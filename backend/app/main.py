@@ -376,6 +376,7 @@ def email_send(
         to_email=to,
         subject=subject,
         body=body,
+        reply_to=str(user.get("email") or ""),
         attachment_bytes=attachment_bytes,
         attachment_filename=filename,
     )
