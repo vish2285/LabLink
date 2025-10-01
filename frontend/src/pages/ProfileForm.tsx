@@ -7,14 +7,32 @@ import { matchProfessors, fetchDepartments } from '../lib/api'
 export default function ProfileForm() {
   const navigate = useNavigate()
   const { setProfile, setResults, profile } = useApp()
-  const [interests, setInterests] = useState(profile?.interests || '')
-  const [skills, setSkills] = useState(profile?.skills || '')
+  // --- Tag input state (interests & skills) ---
+  const seedInterests = (profile?.interests || '')
+    .split(',').map(s => s.trim()).filter(Boolean)
+  const seedSkills = (profile?.skills || '')
+    .split(',').map(s => s.trim()).filter(Boolean)
+  const [interestsList, setInterestsList] = useState<string[]>(seedInterests)
+  const [skillsList, setSkillsList] = useState<string[]>(seedSkills)
+  const [interestInput, setInterestInput] = useState('')
+  const [skillInput, setSkillInput] = useState('')
   const [department, setDepartment] = useState(profile?.department || '')
   const [departments, setDepartments] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Load any saved draft from localStorage (persists across sign out)
+    try {
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem('app_profile') : null
+      if (raw) {
+        const saved = JSON.parse(raw) as { interests?: string; skills?: string; department?: string }
+        if (saved?.interests) setInterestsList(saved.interests.split(',').map(s => s.trim()).filter(Boolean))
+        if (saved?.skills) setSkillsList(saved.skills.split(',').map(s => s.trim()).filter(Boolean))
+        if (saved?.department) setDepartment(saved.department)
+      }
+    } catch {}
+
     async function loadDepartments() {
       try {
         const deps = await fetchDepartments()
@@ -39,14 +57,28 @@ export default function ProfileForm() {
     loadDepartments()
   }, [])
 
+  // Autosave draft to localStorage whenever fields change (no submit required)
+  useEffect(() => {
+    try {
+      const draft = {
+        interests: interestsList.join(', '),
+        skills: skillsList.join(', '),
+        department: department || ''
+      }
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('app_profile', JSON.stringify(draft))
+      }
+    } catch {}
+  }, [interestsList, skillsList, department])
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setLoading(true)
     try {
       const payload = {
-        interests: interests.trim(),
-        skills: skills.trim(),
+        interests: interestsList.join(', '),
+        skills: skillsList.join(', '),
         department: department || undefined,
       }
       setProfile(payload)
@@ -81,23 +113,82 @@ export default function ProfileForm() {
           </div>
           <div className="w-full max-w-md">
             <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Interests</label>
-            <input
-              className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
-              value={interests}
-              onChange={e => setInterests(e.target.value)}
-              placeholder="machine learning, systems, NLP"
-            />
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Comma separated</p>
+            <div className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 bg-white dark:bg-slate-900 px-2 py-2">
+              <div className="flex flex-wrap gap-2">
+                {interestsList.map((t, i) => (
+                  <span key={`${t}-${i}`} className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-300/60 dark:bg-white/10 dark:text-slate-200 dark:border-white/10">
+                    {t}
+                    <button type="button" aria-label="Remove interest" className="ml-1 text-slate-500 hover:text-slate-700 dark:text-slate-400" onClick={() => setInterestsList(interestsList.filter((_, idx) => idx !== i))}>×</button>
+                  </span>
+                ))}
+                <input
+                  className="flex-1 min-w-[10ch] bg-transparent outline-none text-sm text-slate-900 dark:text-slate-100 px-2 py-1"
+                  value={interestInput}
+                  placeholder="Type and press Enter"
+                  onChange={e => setInterestInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault()
+                      const v = interestInput.trim()
+                      if (v && !interestsList.some(x => x.toLowerCase() === v.toLowerCase())) {
+                        setInterestsList([...interestsList, v])
+                        setInterestInput('')
+                      }
+                    } else if (e.key === 'Backspace' && !interestInput && interestsList.length) {
+                      // quick remove last
+                      setInterestsList(interestsList.slice(0, -1))
+                    }
+                  }}
+                  onBlur={() => {
+                    const v = interestInput.trim()
+                    if (v && !interestsList.some(x => x.toLowerCase() === v.toLowerCase())) {
+                      setInterestsList([...interestsList, v])
+                      setInterestInput('')
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Press Enter to add. Click × to remove.</p>
           </div>
           <div className="w-full max-w-md">
             <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Skills</label>
-            <input
-              className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
-              value={skills}
-              onChange={e => setSkills(e.target.value)}
-              placeholder="python, pytorch, rust"
-            />
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Comma separated</p>
+            <div className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 bg-white dark:bg-slate-900 px-2 py-2">
+              <div className="flex flex-wrap gap-2">
+                {skillsList.map((t, i) => (
+                  <span key={`${t}-${i}`} className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-300/60 dark:bg-white/10 dark:text-slate-200 dark:border-white/10">
+                    {t}
+                    <button type="button" aria-label="Remove skill" className="ml-1 text-slate-500 hover:text-slate-700 dark:text-slate-400" onClick={() => setSkillsList(skillsList.filter((_, idx) => idx !== i))}>×</button>
+                  </span>
+                ))}
+                <input
+                  className="flex-1 min-w-[10ch] bg-transparent outline-none text-sm text-slate-900 dark:text-slate-100 px-2 py-1"
+                  value={skillInput}
+                  placeholder="Type and press Enter"
+                  onChange={e => setSkillInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault()
+                      const v = skillInput.trim()
+                      if (v && !skillsList.some(x => x.toLowerCase() === v.toLowerCase())) {
+                        setSkillsList([...skillsList, v])
+                        setSkillInput('')
+                      }
+                    } else if (e.key === 'Backspace' && !skillInput && skillsList.length) {
+                      setSkillsList(skillsList.slice(0, -1))
+                    }
+                  }}
+                  onBlur={() => {
+                    const v = skillInput.trim()
+                    if (v && !skillsList.some(x => x.toLowerCase() === v.toLowerCase())) {
+                      setSkillsList([...skillsList, v])
+                      setSkillInput('')
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Press Enter to add. Click × to remove.</p>
           </div>
           {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
           <div className="flex justify-center w-full">

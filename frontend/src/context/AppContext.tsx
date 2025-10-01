@@ -25,10 +25,27 @@ type AppContextValue = AppState & AppActions
 const AppContext = createContext<AppContextValue | undefined>(undefined)
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [profile, setProfile] = useState<StudentProfile | null>(null)
-  const [results, setResults] = useState<MatchResult[]>([])
+  const [profile, setProfile] = useState<StudentProfile | null>(() => {
+    try {
+      if (typeof window === 'undefined') return null
+      const raw = window.localStorage.getItem('app_profile')
+      return raw ? (JSON.parse(raw) as StudentProfile) : null
+    } catch { return null }
+  })
+  const [results, setResults] = useState<MatchResult[]>(() => {
+    try {
+      if (typeof window === 'undefined') return []
+      const raw = window.localStorage.getItem('app_results')
+      return raw ? (JSON.parse(raw) as MatchResult[]) : []
+    } catch { return [] }
+  })
   const [selectedProfessor, setSelectedProfessor] = useState<Professor | null>(null)
-  const [emailDraft, setEmailDraft] = useState<string>('')
+  const [emailDraft, setEmailDraft] = useState<string>(() => {
+    try {
+      if (typeof window === 'undefined') return ''
+      return window.localStorage.getItem('app_email_draft') || ''
+    } catch { return '' }
+  })
   const [emailSubject, setEmailSubject] = useState<string>('')
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = typeof window !== 'undefined' ? (localStorage.getItem('theme') as 'light' | 'dark' | null) : null
@@ -44,6 +61,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     else root.classList.remove('dark')
     try { localStorage.setItem('theme', theme) } catch {}
   }, [theme])
+
+  // Persist profile/results/email across sessions
+  useEffect(() => {
+    try { if (profile) window.localStorage.setItem('app_profile', JSON.stringify(profile)); else window.localStorage.removeItem('app_profile') } catch {}
+  }, [profile])
+  useEffect(() => {
+    try { window.localStorage.setItem('app_results', JSON.stringify(results || [])) } catch {}
+  }, [results])
+  useEffect(() => {
+    try { window.localStorage.setItem('app_email_draft', emailDraft || '') } catch {}
+  }, [emailDraft])
+  useEffect(() => {
+    try { window.localStorage.setItem('app_email_subject', emailSubject || '') } catch {}
+  }, [emailSubject])
 
   const value = useMemo<AppContextValue>(
     () => ({
