@@ -8,12 +8,12 @@ import { generateEmail } from '../lib/api'
 import { useAuth } from '../auth/AuthContext'
 
 export default function EmailEditor() {
-  const { selectedProfessor, emailDraft, setEmailDraft, profile } = useApp()
+  const { selectedProfessor, emailDraft, setEmailDraft, profile, emailSubject, setEmailSubject } = useApp() as any
   const { user } = useAuth()
   const [generatedEmail, setGeneratedEmail] = useState<{ subject: string; body: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [file, setFile] = useReactState<File | null>(null)
-  const [subjectText, setSubjectText] = useState<string>('')
+  const [subjectText, setSubjectText] = useState<string>(emailSubject || '')
   
   console.log('EmailEditor - selectedProfessor:', selectedProfessor)
   console.log('EmailEditor - emailDraft:', emailDraft)
@@ -39,7 +39,9 @@ export default function EmailEditor() {
         topic: profile.interests || '',
       })
       setGeneratedEmail(email)
-      setSubjectText(email.subject || '')
+      const subj = email.subject || ''
+      setSubjectText(subj)
+      setEmailSubject(subj)
       setEmailDraft(email.body)
     } catch (error) {
       console.error('Failed to generate email:', error)
@@ -66,7 +68,7 @@ export default function EmailEditor() {
             <input
               className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
               value={subjectText}
-              onChange={e => setSubjectText(e.target.value)}
+              onChange={e => { setSubjectText(e.target.value); setEmailSubject(e.target.value) }}
               placeholder=""
             />
           </div>

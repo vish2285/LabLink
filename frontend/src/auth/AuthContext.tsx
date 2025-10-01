@@ -76,6 +76,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('message', handler)
   }, [])
 
+  // Initialize GIS once for silent refresh with auto_select
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const w = window as any
+      const clientId = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID as string | undefined
+      if (!clientId || !w.google?.accounts?.id) return
+      w.google.accounts.id.initialize({
+        client_id: clientId,
+        auto_select: true,
+        callback: (resp: any) => {
+          const token = resp?.credential
+          if (token) {
+            try {
+              window.localStorage.setItem(TOKEN_KEY, token)
+              window.postMessage({ type: 'google-auth', idToken: token }, '*')
+            } catch {}
+          }
+        }
+      })
+    } catch {}
+  }, [])
+
+  // Decode exp from JWT
+  function getExpiryMs(token: string | null): number | null {
+    try {
+      if (!token) return null
+      const [, payload] = token.split('.')
+      if (!payload) return null
+      let b64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+      const pad = b64.length % 4
+      if (pad) b64 += '='.repeat(4 - pad)
+      const data = JSON.parse(atob(b64))
+      const exp = typeof data.exp === 'number' ? data.exp * 1000 : null
+      return exp
+    } catch { return null }
+  }
+
+  // Schedule quiet refresh ~5 minutes before expiry
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any
+    let timer: number | undefined
+    const expMs = getExpiryMs(idToken)
+    if (expMs && w.google?.accounts?.id?.prompt) {
+      const now = Date.now()
+      const lead = 5 * 60 * 1000
+      const delay = Math.max(30_000, expMs - now - lead)
+      timer = window.setTimeout(() => {
+        try { w.google.accounts.id.prompt(() => {}) } catch {}
+      }, delay)
+    }
+    return () => { if (timer) window.clearTimeout(timer) }
+  }, [idToken])
+
   const value = useMemo<AuthContextValue>(() => ({
     isSignedIn: Boolean(idToken),
     idToken,

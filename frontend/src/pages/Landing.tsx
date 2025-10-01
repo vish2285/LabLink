@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import CursorGrid from '../components/CursorGrid'
 import Button from '../components/Button'
 import { FiUserPlus, FiSearch, FiMail } from 'react-icons/fi'
 
 export default function Landing() {
-  const [open, setOpen] = useState(false)
+  const howRef = useRef<HTMLDivElement | null>(null)
 
   return (
     <section className="relative overflow-hidden">
@@ -27,10 +27,14 @@ export default function Landing() {
             <Button asChild>
               <a href="/profile">Create your profile</a>
             </Button>
-            <Button variant="ghost" onClick={() => setOpen(true)}>How it works</Button>
+            <Button variant="ghost" onClick={() => {
+              try { howRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) } catch {}
+            }}>How it works</Button>
           </div>
         </div>
         <motion.div
+          id="how-it-works"
+          ref={howRef}
           className="mx-auto mt-32 max-w-5xl"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -81,25 +85,7 @@ export default function Landing() {
         </motion.div>
       </div>
 
-      {open && (
-        <div className="fixed inset-0 z-30 flex h-full w-full items-center justify-center">
-          <div className="absolute inset-0 h-full w-full bg-black/50" onClick={() => setOpen(false)} />
-          <div className="relative px-4">
-            <button
-              className="mb-4 h-10 w-10 rounded-full bg-gray-800 text-white duration-150 hover:bg-gray-700"
-              onClick={() => setOpen(false)}
-              aria-label="Close"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="m-auto h-5 w-5">
-                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-              </svg>
-            </button>
-            <video className="h-auto w-full max-w-2xl rounded-lg" controls autoPlay>
-              <source src="https://raw.githubusercontent.com/sidiDev/remote-assets/main/FloatUI.mp4" type="video/mp4" />
-            </video>
-          </div>
-        </div>
-      )}
+      
     </section>
   )
 }

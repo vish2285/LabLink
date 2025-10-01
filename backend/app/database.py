@@ -4,6 +4,9 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import os
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./professors.db")
+# Normalize driver for psycopg3 if user provides plain 'postgresql://' URL
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
 # SQLite needs check_same_thread=False for FastAPI dev
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}

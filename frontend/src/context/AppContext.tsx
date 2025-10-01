@@ -6,6 +6,7 @@ type AppState = {
   results: MatchResult[]
   selectedProfessor: Professor | null
   emailDraft: string
+  emailSubject: string
   theme: 'light' | 'dark'
 }
 
@@ -14,6 +15,7 @@ type AppActions = {
   setResults: (results: MatchResult[]) => void
   selectProfessor: (professor: Professor | null) => void
   setEmailDraft: (draft: string) => void
+  setEmailSubject: (subj: string) => void
   toggleTheme: () => void
   setTheme: (t: 'light' | 'dark') => void
 }
@@ -27,6 +29,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [results, setResults] = useState<MatchResult[]>([])
   const [selectedProfessor, setSelectedProfessor] = useState<Professor | null>(null)
   const [emailDraft, setEmailDraft] = useState<string>('')
+  const [emailSubject, setEmailSubject] = useState<string>('')
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = typeof window !== 'undefined' ? (localStorage.getItem('theme') as 'light' | 'dark' | null) : null
     if (saved === 'light' || saved === 'dark') return saved
@@ -48,15 +51,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       results,
       selectedProfessor,
       emailDraft,
+      emailSubject,
       theme,
       setProfile,
       setResults,
       selectProfessor: setSelectedProfessor,
       setEmailDraft,
+      setEmailSubject,
       toggleTheme: () => setTheme(t => (t === 'dark' ? 'light' : 'dark')),
       setTheme,
     }),
-    [profile, results, selectedProfessor, emailDraft, theme]
+    [profile, results, selectedProfessor, emailDraft, emailSubject, theme]
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
