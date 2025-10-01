@@ -8,11 +8,13 @@ import Landing from './pages/Landing.tsx'
 import Footer from './components/Footer.tsx'
 import About from './pages/About.tsx'
 import Feedback from './pages/Feedback.tsx'
+import { useApp } from './context/AppContext'
 
 function App() {
+  const { theme } = useApp()
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col text-slate-100 bg-gradient-to-b from-[#0b1220] via-[#0a0f1a] to-[#05080f]">
+      <div className={`min-h-screen flex flex-col ${theme === 'dark' ? 'text-slate-100 bg-gradient-to-b from-[#0b1220] via-[#0a0f1a] to-[#05080f]' : 'text-slate-900 bg-white'}`}>
         <Header />
         <main className="w-full px-4 md:px-8 py-8 flex-1">
           <Routes>

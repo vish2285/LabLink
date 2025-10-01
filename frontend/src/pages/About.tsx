@@ -3,23 +3,23 @@ import FAQ from '../components/FAQ'
 
 export default function About() {
   return (
-    <div className="mx-auto max-w-5xl px-4 md:px-8 py-10 text-slate-200">
+    <div className="mx-auto max-w-5xl px-4 md:px-8 py-10 text-slate-700 dark:text-slate-200">
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-white">About LabLink</h1>
-        <p className="mt-2 text-slate-300/90">Connecting UC Davis students with professors whose research aligns with their interests.</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">About LabLink</h1>
+        <p className="mt-2 text-slate-700/90 dark:text-slate-300/90">Connecting UC Davis students with professors whose research aligns with their interests.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <section className="rounded-xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-xl font-semibold text-white mb-2">What it does</h2>
+        <section className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">What it does</h2>
           <p className="text-sm leading-relaxed">
             LabLink analyzes your interests and skills, compares them to faculty interests and recent publications,
             and surfaces professors who are most aligned. It also drafts a professional outreach email that you can edit and send.
           </p>
         </section>
 
-        <section className="rounded-xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-xl font-semibold text-white mb-2">How it works</h2>
+        <section className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">How it works</h2>
           <ol className="text-sm space-y-2 list-decimal list-inside">
             <li>Create your profile with interests, skills, and optional department.</li>
             <li>Browse your top matches and see why each professor aligns.</li>
@@ -27,15 +27,15 @@ export default function About() {
           </ol>
         </section>
 
-        <section className="rounded-xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-xl font-semibold text-white mb-2">Privacy</h2>
+        <section className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Privacy</h2>
           <p className="text-sm leading-relaxed">
             Your profile is used only to compute matches and draft emails on your device and our API. No data is sold or shared.
           </p>
         </section>
 
-        <section className="rounded-xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-xl font-semibold text-white mb-2">Get started</h2>
+        <section className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Get started</h2>
           <p className="text-sm leading-relaxed mb-4">It takes less than a minute to see your first matches.</p>
           <Button asChild>
             <a href="/profile">Create your profile</a>
@@ -45,7 +45,7 @@ export default function About() {
 
       {/* FAQ */}
       <div className="mt-10">
-        <h2 className="text-2xl font-bold text-white mb-4">FAQ</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">FAQ</h2>
         <FAQ items={faqItems} />
       </div>
     </div>

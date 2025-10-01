@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
+import { FiSun, FiMoon } from 'react-icons/fi'
 
 function classNames(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(' ')
@@ -7,9 +9,10 @@ function classNames(...classes: Array<string | false | undefined>) {
 
 export default function Header() {
   const [open, setOpen] = useState(false)
+  const { theme, toggleTheme } = useApp()
 
   return (
-    <header className="sticky top-0 z-10 border-b border-white/10 bg-slate-900/60 backdrop-blur">
+    <header className="sticky top-0 z-10 border-b border-slate-200/60 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur">
       <div
         className={classNames(
           'mx-auto max-w-6xl px-4',
@@ -18,7 +21,7 @@ export default function Header() {
       >
         <div className="flex items-center gap-3">
           <button
-            className="lg:hidden text-slate-300 hover:text-white"
+            className="lg:hidden text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
             onClick={() => setOpen(s => !s)}
             aria-label="Toggle navigation"
           >
@@ -41,7 +44,7 @@ export default function Header() {
             )}
           </button>
 
-          <Link to="/" className="flex items-center gap-2 text-slate-100">
+          <Link to="/" className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
             <img src="/lablink.png" alt="LabLink logo" className="h-10 w-10" />
             <span className="text-xl font-semibold ">LabLink</span>
           </Link>
@@ -60,8 +63,8 @@ export default function Header() {
                   to={link.path}
                   className={({ isActive }) =>
                     classNames(
-                      'rounded px-3 py-2 text-sm text-slate-300 hover:bg-white/10 hover:text-white',
-                      isActive && 'bg-white/10 text-white'
+                      'rounded px-3 py-2 text-sm text-slate-600 hover:bg-slate-900/5 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white',
+                      isActive && 'bg-slate-900/5 text-slate-900 dark:bg-white/10 dark:text-white'
                     )
                   }
                 >
@@ -72,10 +75,19 @@ export default function Header() {
           </ul>
         </nav>
 
-        <div className="hidden lg:flex" />
+        <div className="hidden lg:flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/10"
+            aria-label="Toggle theme"
+            title={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
+          >
+            {theme === 'dark' ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
       {open && (
-        <div className="border-t border-white/10 bg-slate-900/80 lg:hidden">
+        <div className="border-t border-slate-200/60 bg-white/80 dark:border-white/10 dark:bg-slate-900/80 lg:hidden">
           <ul className="mx-auto max-w-6xl px-4 py-3 space-y-2">
             {[
               { title: 'Profile', path: '/' },
@@ -88,8 +100,8 @@ export default function Header() {
                   onClick={() => setOpen(false)}
                   className={({ isActive }) =>
                     classNames(
-                      'block rounded px-3 py-2 text-sm text-slate-300 hover:bg-white/10',
-                      isActive && 'bg-white/10 text-white'
+                      'block rounded px-3 py-2 text-sm text-slate-700 hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/10',
+                      isActive && 'bg-slate-900/5 text-slate-900 dark:bg-white/10 dark:text-white'
                     )
                   }
                 >
@@ -97,6 +109,17 @@ export default function Header() {
                 </NavLink>
               </li>
             ))}
+            <li>
+              <button
+                onClick={() => { toggleTheme(); setOpen(false) }}
+                className="inline-flex items-center gap-2 rounded px-3 py-2 text-sm text-slate-700 hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/10"
+                aria-label="Toggle theme"
+                title={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
+              >
+                {theme === 'dark' ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}
+                <span className="sr-only">Toggle theme</span>
+              </button>
+            </li>
           </ul>
         </div>
       )}

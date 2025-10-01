@@ -62,14 +62,14 @@ export default function ProfileForm() {
 
   return (
     <div className="space-y-6" id="profile">
-      <div className="mx-auto w-full max-w-3xl rounded-xl border border-white/10 bg-white/5 p-6 shadow-sm text-center text-slate-100">
-        <h1 className="text-xl font-semibold text-white">Your Research Profile</h1>
-        <p className="mt-1 text-sm text-slate-300">Add interests and skills to find matching UC Davis professors.</p>
+      <div className="mx-auto w-full max-w-3xl rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6 shadow-sm text-center text-slate-900 dark:text-slate-100">
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Your Research Profile</h1>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Add interests and skills to find matching UC Davis professors.</p>
         <form onSubmit={onSubmit} className="mt-5 grid gap-5 justify-items-center">
           <div className="w-full max-w-md">
-            <label className="block text-sm font-medium text-slate-200">Department</label>
+            <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Department</label>
             <select
-              className="mt-1 w-full rounded-lg border border-white/20 px-3 py-2 bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+              className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 px-3 py-2 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
               value={department}
               onChange={e => setDepartment(e.target.value)}
             >
@@ -80,26 +80,26 @@ export default function ProfileForm() {
             </select>
           </div>
           <div className="w-full max-w-md">
-            <label className="block text-sm font-medium text-slate-200">Interests</label>
+            <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Interests</label>
             <input
-              className="mt-1 w-full rounded-lg border border-white/20 bg-slate-900 text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+              className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
               value={interests}
               onChange={e => setInterests(e.target.value)}
               placeholder="machine learning, systems, NLP"
             />
-            <p className="mt-1 text-xs text-slate-400">Comma separated</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Comma separated</p>
           </div>
           <div className="w-full max-w-md">
-            <label className="block text-sm font-medium text-slate-200">Skills</label>
+            <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Skills</label>
             <input
-              className="mt-1 w-full rounded-lg border border-white/20 bg-slate-900 text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+              className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
               value={skills}
               onChange={e => setSkills(e.target.value)}
               placeholder="python, pytorch, rust"
             />
-            <p className="mt-1 text-xs text-slate-400">Comma separated</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Comma separated</p>
           </div>
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
           <div className="flex justify-center w-full">
             <Button type="submit" disabled={loading}>
               {loading ? 'Matching…' : 'Find Matches'}

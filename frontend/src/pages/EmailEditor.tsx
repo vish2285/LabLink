@@ -51,24 +51,24 @@ export default function EmailEditor() {
   return (
     <div className="space-y-6">
       <div className="mx-auto w-full max-w-3xl px-1">
-        <Link to="/results" className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white">
+        <Link to="/results" className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
           <FiArrowLeft className="h-4 w-4" />
           Back to Results
         </Link>
       </div>
-      <div className="mx-auto w-full max-w-3xl rounded-xl border border-white/10 bg-white/5 p-6 shadow-sm text-slate-100">
+      <div className="mx-auto w-full max-w-3xl rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6 shadow-sm text-slate-900 dark:text-slate-100">
         {!selectedProfessor && (
-          <p className="text-sm text-slate-300">No professor selected. <Link to="/results" className="text-[#7cc4ff] underline">Go to results</Link></p>
+          <p className="text-sm text-slate-700 dark:text-slate-300">No professor selected. <Link to="/results" className="text-blue-700 dark:text-[#7cc4ff] underline">Go to results</Link></p>
         )}
         <div className="grid gap-5">
           <div>
-            <label className="block text-sm font-medium text-slate-200">Subject</label>
-            <input className="mt-1 w-full rounded-lg border border-white/20 bg-slate-900 text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]" value={subject} readOnly />
+            <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Subject</label>
+            <input className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]" value={subject} readOnly />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-200">Body</label>
+            <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Body</label>
             <textarea
-              className="mt-1 h-[18rem] sm:h-[24rem] w-full rounded-lg border border-white/20 bg-slate-900 text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+              className="mt-1 h-[18rem] sm:h-[24rem] w-full rounded-lg border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
               value={body}
               onChange={e => setEmailDraft(e.target.value)}
             />
@@ -78,7 +78,7 @@ export default function EmailEditor() {
               <FiMail className="h-4 w-4 mr-2" />
               {loading ? 'Generating…' : 'Generate Email'}
             </Button>
-            <label className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md border border-white/20 bg-white/5 px-4 text-sm text-slate-200 cursor-pointer hover:bg-white/10 transition">
+            <label className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-white/5 dark:text-slate-200 px-4 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition">
               <input type="file" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
               <FiPaperclip className="h-4 w-4" />
               <span className="truncate max-w-[12rem]">{file ? file.name : 'Attach CV/Resume'}</span>
@@ -101,7 +101,7 @@ export default function EmailEditor() {
               Send Email
             </Button>
             <a
-              className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md border border-white/20 bg-white/5 px-4 text-sm text-slate-200 hover:bg-white/10 transition"
+              className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-white/5 dark:text-slate-200 px-4 text-sm hover:bg-slate-100 dark:hover:bg-white/10 transition"
               href={
                 `mailto:${selectedProfessor?.email || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
               }

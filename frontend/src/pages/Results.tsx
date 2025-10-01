@@ -44,10 +44,10 @@ export default function Results() {
         animate="show"
       >
         <div className="text-center space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold text-white">Top Matches</h1>
-          <p className="text-slate-300/90">Discover UC Davis professors aligned with your interests and skills.</p>
-          <div className="flex items-center justify-center gap-3 text-sm text-slate-400">
-            <Link to="/profile" className="hover:text-white">Edit Profile</Link>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Top Matches</h1>
+          <p className="text-slate-700/90 dark:text-slate-300/90">Discover UC Davis professors aligned with your interests and skills.</p>
+          <div className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+            <Link to="/profile" className="hover:text-slate-900 dark:hover:text-white">Edit Profile</Link>
             <span>•</span>
             <span>{results.length} matches found</span>
           </div>
@@ -128,9 +128,9 @@ export default function Results() {
           {results.length > 3 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-px flex-1 bg-white/10" />
-                <span className="text-sm font-medium text-slate-300">More Matches</span>
-                <div className="h-px flex-1 bg-white/10" />
+                <div className="h-px flex-1 bg-slate-300/60 dark:bg-white/10" />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">More Matches</span>
+                <div className="h-px flex-1 bg-slate-300/60 dark:bg-white/10" />
               </div>
               <AnimatePresence mode="sync">
                 <motion.div

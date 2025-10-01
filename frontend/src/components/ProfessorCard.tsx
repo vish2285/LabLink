@@ -30,15 +30,15 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
 
   // Consistent borders; tiered elevation by rank
   const containerAccent = rank === 1
-    ? 'border-gray-200 shadow-lg'
+    ? 'border-slate-300 shadow-lg'
     : rank === 2
-      ? 'border-gray-200 shadow-md'
+      ? 'border-slate-300 shadow-md'
       : rank === 3
-        ? 'border-gray-200 shadow'
-        : 'border-gray-200 shadow-sm'
+        ? 'border-slate-300 shadow'
+        : 'border-slate-300 shadow-sm'
   
   return (
-    <div className={`relative rounded-xl border border-white/10 bg-white/5 ${containerAccent} transition-transform duration-300 ease-out hover:-translate-y-1 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/20 will-change-transform`}>
+    <div className={`relative rounded-xl border ${containerAccent} bg-white/70 dark:border-white/10 dark:bg-white/5 transition-transform duration-300 ease-out hover:-translate-y-1 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/20 will-change-transform`}>
       {typeof rank === 'number' && (
         <div className="absolute -top-3 -left-3">
           <div className={`${rankSizeClass} rounded-full bg-gradient-to-br ${rankBadgeClass} text-white font-bold flex items-center justify-center shadow-md`}>
@@ -55,9 +55,9 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
                 <Avatar name={professor.name} photoUrl={professor.photo_url} />
               </div>
             </div>
-            <h3 className={`${centered ? 'text-2xl md:text-3xl' : 'text-lg sm:text-xl'} font-semibold text-white mb-1`}>{professor.name}</h3>
+            <h3 className={`${centered ? 'text-2xl md:text-3xl' : 'text-lg sm:text-xl'} font-semibold text-slate-900 dark:text-white mb-1`}>{professor.name}</h3>
             {professor.department && (
-              <p className="text-slate-300 font-medium text-sm mb-2">{professor.department}</p>
+              <p className="text-slate-700 dark:text-slate-300 font-medium text-sm mb-2">{professor.department}</p>
             )}
           </div>
           <div className="flex flex-col items-end">
@@ -67,7 +67,7 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
 
         {professor.research_interests && (
           <div className="mb-4">
-            <p className="text-slate-200 leading-relaxed text-sm line-clamp-3">{professor.research_interests}</p>
+            <p className="text-slate-700 dark:text-slate-200 leading-relaxed text-sm line-clamp-3">{professor.research_interests}</p>
           </div>
         )}
 
@@ -78,21 +78,21 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
         )}
 
         {professor.why && (
-          <div className="mb-6 p-4 rounded-lg border border-white/10 bg-white/5">
+          <div className="mb-6 p-4 rounded-lg border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5">
             <div className="space-y-2">
               {professor.why.interests_hits.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-                  <span className="text-xs text-slate-300">
-                    <span className="font-medium text-white">Interests:</span> {professor.why.interests_hits.slice(0, 3).join(', ')}
+                  <span className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full"></span>
+                  <span className="text-xs text-slate-700 dark:text-slate-300">
+                    <span className="font-medium text-slate-900 dark:text-white">Interests:</span> {professor.why.interests_hits.slice(0, 3).join(', ')}
                   </span>
                 </div>
               )}
               {professor.why.skills_hits.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                  <span className="text-xs text-slate-300">
-                    <span className="font-medium text-white">Skills:</span> {professor.why.skills_hits.slice(0, 3).join(', ')}
+                  <span className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full"></span>
+                  <span className="text-xs text-slate-700 dark:text-slate-300">
+                    <span className="font-medium text-slate-900 dark:text-white">Skills:</span> {professor.why.skills_hits.slice(0, 3).join(', ')}
                   </span>
                 </div>
               )}
