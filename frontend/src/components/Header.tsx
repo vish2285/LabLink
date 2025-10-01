@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { FiSun, FiMoon } from 'react-icons/fi'
+import { useAuth } from '../auth/AuthContext'
+import Avatar from './Avatar'
 
 function classNames(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(' ')
@@ -9,7 +11,9 @@ function classNames(...classes: Array<string | false | undefined>) {
 
 export default function Header() {
   const [open, setOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { theme, toggleTheme } = useApp()
+  const { isSignedIn, signOut, user } = useAuth() as any
 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-200/60 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur">
@@ -76,6 +80,37 @@ export default function Header() {
         </nav>
 
         <div className="hidden lg:flex items-center gap-2">
+          {!isSignedIn ? (
+            <Link to="/sign-in" className="rounded-lg px-3 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700">Sign in</Link>
+          ) : (
+            <div className="relative">
+              <button
+                className="inline-flex items-center gap-2"
+                onClick={() => setUserMenuOpen(s => !s)}
+                aria-haspopup="menu"
+                aria-expanded={userMenuOpen}
+                aria-label="Account menu"
+              >
+                <Avatar name={user?.name || user?.email || 'User'} photoUrl={user?.picture} />
+              </button>
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-lg p-2 z-20" role="menu">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{user?.name || 'Signed in'}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 truncate">{user?.email}</p>
+                  </div>
+                  <div className="mt-1 border-t border-slate-200 dark:border-white/10" />
+                  <button
+                    onClick={() => { setUserMenuOpen(false); signOut() }}
+                    className="mt-1 w-full text-left rounded px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"
+                    role="menuitem"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           <button
             onClick={toggleTheme}
             className="rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/10"

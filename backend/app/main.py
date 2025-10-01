@@ -1,5 +1,6 @@
 # 🚀 LabLink FastAPI (JSON-backed, skills-aware matching)
 from fastapi import FastAPI, Depends, HTTPException, Query, Body
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import os
@@ -21,7 +22,7 @@ from .matching import (
 )
 from .email_utils import build_email, send_email_with_attachment
 import httpx
-import re
+import base64
 from urllib.parse import urljoin
 
 # Load environment from .env (for SMTP, etc.)
@@ -33,10 +34,63 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in ALLOWED_ORIGINS if o.strip()],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+"""
+Google Identity Services auth: verify Google ID token (Authorization: Bearer <id_token>)
+and enforce @ucdavis.edu domain.
+"""
+
+security = HTTPBearer(auto_error=False)
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+
+def verify_google_token(token: str) -> dict:
+    try:
+        from google.oauth2 import id_token as google_id_token  # type: ignore
+        from google.auth.transport import requests as google_requests  # type: ignore
+        req = google_requests.Request()
+        claims = google_id_token.verify_oauth2_token(token, req, GOOGLE_CLIENT_ID)
+        # claims must have email_verified True ideally
+        if not claims.get("email"):
+            raise HTTPException(401, "Token missing email")
+        iss = str(claims.get("iss", ""))
+        if iss not in {"accounts.google.com", "https://accounts.google.com"}:
+            raise HTTPException(401, "Invalid token issuer")
+        if claims.get("email_verified") is not True:
+            raise HTTPException(401, "Unverified email")
+        return claims
+    except Exception as e:
+        # Surface precise verification reason during debugging
+        raise HTTPException(401, f"Invalid Google token: {e}")
+
+def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(security)) -> dict:
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(401, "Missing bearer token")
+    token = credentials.credentials
+    return verify_google_token(token)
+
+def require_ucdavis_user(user: dict = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
+    email = str(user.get("email") or "")
+    domain = email.split("@", 1)[-1].lower() if "@" in email else None
+    hd = str(user.get("hd") or "").lower() or None
+    if domain != "ucdavis.edu" and hd != "ucdavis.edu":
+        raise HTTPException(403, "Email domain not allowed")
+    # Upsert user record by Google sub
+    try:
+        sub = str(user.get("sub"))
+        name = user.get("name")
+        picture = user.get("picture")
+        if sub:
+            crud.get_or_create_user_by_sub(db, sub, email=email, name=name, picture=picture)
+    except Exception:
+        pass
+    return user
+
+
+ # Removed legacy /api/auth/google since we verify tokens per request
+
 
 # ---- DB init (no Alembic for MVP) ----
 Base.metadata.create_all(bind=engine)
@@ -197,7 +251,8 @@ def match_professors(
     w_interests: float = Query(0.55, ge=0.0, le=1.0),
     w_skills: float = Query(0.35, ge=0.0, le=1.0),
     w_pubs: float = Query(0.10, ge=0.0, le=1.0),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_ucdavis_user),
 ):
     if not profile.interests.strip() and not (profile.skills or "").strip():
         raise HTTPException(400, "Provide at least interests or skills")
@@ -296,7 +351,7 @@ def match_professors(
     )
 
 @app.post("/api/email/generate", response_model=EmailDraft)
-def email_generate(req: EmailRequest):
+def email_generate(req: EmailRequest, user: dict = Depends(require_ucdavis_user)):
     draft = build_email(
         student_name=req.student_name,
         student_skills=req.student_skills,
@@ -314,8 +369,8 @@ def email_send(
     body: str = Body(..., embed=True),
     filename: str | None = Body(None, embed=True),
     file_b64: str | None = Body(None, embed=True),
+    user: dict = Depends(require_ucdavis_user),
 ):
-    import base64
     attachment_bytes = base64.b64decode(file_b64) if file_b64 else None
     send_email_with_attachment(
         to_email=to,

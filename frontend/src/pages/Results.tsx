@@ -1,12 +1,36 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
+import type { MatchResult } from '../types'
+import { useEffect, useState } from 'react'
+import { matchProfessors } from '../lib/api'
 import ProfessorCard from '../components/ProfessorCard'
 import EmptyState from '../components/EmptyState'
 
 export default function Results() {
   const navigate = useNavigate()
-  const { results, selectProfessor, setEmailDraft } = useApp()
+  const { results, selectProfessor, setEmailDraft, profile, setResults } = useApp() as any
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function maybeFetch() {
+      if (!results?.length && profile?.interests?.trim?.()) {
+        try {
+          setLoading(true)
+          setError(null)
+          const res = await matchProfessors(profile, profile?.department || undefined)
+          setResults(res)
+        } catch (e: any) {
+          setError(e?.message || 'Failed to load matches')
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+    maybeFetch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const page = {
     hidden: { opacity: 0, y: 12 },
@@ -31,6 +55,20 @@ export default function Results() {
     // Open EmailEditor with an empty body; user can generate from there
     setEmailDraft('')
     navigate('/email')
+  }
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 min-h-[60vh]">
+        <div className="text-slate-700 dark:text-slate-300">Loading matches…</div>
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-16 min-h-[60vh]">
+        <div className="text-red-600 dark:text-red-400">{error}</div>
+      </div>
+    )
   }
   if (!results?.length) return <EmptyState />
 
@@ -139,7 +177,7 @@ export default function Results() {
                   initial="hidden"
                   animate="show"
                 >
-                  {results.slice(3).map((professor, index) => (
+                  {results.slice(3).map((professor: MatchResult, index: number) => (
                     <motion.div key={index + 3} variants={item}>
                       <ProfessorCard
                         professor={professor}

@@ -47,3 +47,23 @@ class ProfessorSkill(Base):
     skill: Mapped["Skill"] = relationship()
 
     __table_args__ = (UniqueConstraint("professor_id", "skill_id", name="uq_prof_skill"),)
+
+
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # Google subject (immutable, use as stable external ID)
+    sub: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    email: Mapped[str] = mapped_column(String(255), index=True)
+    name: Mapped[str | None] = mapped_column(String(255))
+    picture: Mapped[str | None] = mapped_column(String(512))
+
+
+class SessionToken(Base):
+    __tablename__ = "sessions"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    token: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    expires_at: Mapped[int] = mapped_column(Integer)  # unix epoch seconds
+
+    user: Mapped["User"] = relationship()

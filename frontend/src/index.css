@@ -12,6 +12,13 @@
     color-scheme: light;
     background-color: #ffffff;
   }
+  /* Subtle layered background for light mode */
+  html body, html #root {
+    background-image:
+      radial-gradient(900px 540px at 50% -220px, rgba(30,58,138,0.06), rgba(30,58,138,0) 60%),
+      linear-gradient(180deg, #ffffff 0%, #f7f9fc 50%, #ffffff 100%);
+    background-attachment: fixed;
+  }
   /* Dark mode base on html element */
   html.dark {
     color-scheme: dark;

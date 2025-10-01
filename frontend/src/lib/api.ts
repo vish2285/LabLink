@@ -1,26 +1,79 @@
 import type { Professor, StudentProfile, MatchResult } from '../types'
 
+async function getAuthToken(): Promise<string | null> {
+  try {
+    const token = window.localStorage.getItem('google_id_token')
+    return token || null
+  } catch (_) {
+    return null
+  }
+}
+
+async function authorizedFetch(input: RequestInfo, init: RequestInit = {}) {
+  const token = await getAuthToken()
+  const headers: Record<string, string> = {
+    ...(init.headers as Record<string, string> | undefined),
+  }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  let res = await fetch(input, { ...init, headers })
+  if (res.status === 401) {
+    // Try prompting Google for a fresh token once
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const w = window as any
+      // Ensure GIS is initialized with a callback that updates localStorage
+      const clientId = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID as string | undefined
+      if (clientId && w.google?.accounts?.id) {
+        try {
+          w.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: (resp: any) => {
+              const cred = resp?.credential
+              if (cred) {
+                try {
+                  window.localStorage.setItem('google_id_token', cred)
+                  window.postMessage({ type: 'google-auth', idToken: cred }, '*')
+                } catch {}
+              }
+            }
+          })
+        } catch {}
+      }
+      await new Promise<void>((resolve) => {
+        w.google?.accounts?.id?.prompt?.(() => resolve())
+      })
+      const t2 = await getAuthToken()
+      const headers2: Record<string, string> = {
+        ...(init.headers as Record<string, string> | undefined),
+      }
+      if (t2) headers2['Authorization'] = `Bearer ${t2}`
+      res = await fetch(input, { ...init, headers: headers2 })
+    } catch {}
+  }
+  return res
+}
+
 export async function fetchProfessors(): Promise<Professor[]> {
-  const res = await fetch('/api/professors')
+  const res = await authorizedFetch('/api/professors')
   if (!res.ok) throw new Error('Failed to load professors')
   return res.json()
 }
 
 export async function fetchDepartments(): Promise<string[]> {
-  const res = await fetch('/api/departments')
+  const res = await authorizedFetch('/api/departments')
   if (!res.ok) throw new Error('Failed to load departments')
   return res.json()
 }
 
 export async function fetchProfessor(id: number): Promise<Professor> {
-  const res = await fetch(`/api/professors/${id}`)
+  const res = await authorizedFetch(`/api/professors/${id}`)
   if (!res.ok) throw new Error('Failed to load professor')
   return res.json()
 }
 
 export async function matchProfessors(profile: StudentProfile, department?: string): Promise<MatchResult[]> {
   const query = department ? `?department=${encodeURIComponent(department)}` : ''
-  const res = await fetch(`/api/match${query}`, {
+  const res = await authorizedFetch(`/api/match${query}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(profile),
@@ -48,7 +101,7 @@ export async function generateEmail(request: {
   paper_title?: string;
   topic?: string;
 }): Promise<{ subject: string; body: string }> {
-  const res = await fetch('/api/email/generate', {
+  const res = await authorizedFetch('/api/email/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
@@ -56,37 +109,3 @@ export async function generateEmail(request: {
   if (!res.ok) throw new Error('Failed to generate email')
   return res.json()
 }
-
-// Interact with our API
-// import {useAuth} from "@clerk/clerk-react"
-
-// export const useApi = () => {
-//     const {getToken} = useAuth()
-
-//     const makeRequest = async (endpoint, options = {}) => {
-//         const token = await getToken()
-//         const defaultOptions = {
-//             headers: {
-//                 "Content-Type": "application/json",
-//                 "Authorization": `Bearer ${token}`
-//             }
-//         }
-
-//         const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/${endpoint}`, {
-//             ...defaultOptions,
-//             ...options,
-//         })
-
-//         if (!response.ok) {
-//             const errorData = await response.json().catch(() => null)
-//             if (response.status === 429) {
-//                 throw new Error("Daily quota exceeded")
-//             }
-//             throw new Error(errorData?.detail || "An error occurred")
-//         }
-
-//         return response.json()
-//     }
-
-//     return {makeRequest}
-// }
