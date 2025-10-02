@@ -11,7 +11,14 @@ if DATABASE_URL.startswith("postgresql://"):
 # SQLite needs check_same_thread=False for FastAPI dev
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 
-engine = create_engine(DATABASE_URL, echo=False, future=True, connect_args=connect_args)
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    future=True,
+    connect_args=connect_args,
+    pool_pre_ping=True,   # proactively validates connections
+    pool_recycle=300,     # recycle connections every 5 minutes to avoid stale SSL
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 class Base(DeclarativeBase):

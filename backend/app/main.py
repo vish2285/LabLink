@@ -1,5 +1,5 @@
 # 🚀 LabLink FastAPI (JSON-backed, skills-aware matching)
-from fastapi import FastAPI, Depends, HTTPException, Query, Body, Response, Cookie
+from fastapi import FastAPI, Depends, HTTPException, Query, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -23,7 +23,6 @@ from .matching import (
 from .email_utils import build_email, send_email_with_attachment
 import httpx
 import base64
-import time
 from urllib.parse import urljoin
 
 # Load environment from .env (for SMTP, etc.)
@@ -90,74 +89,7 @@ def require_ucdavis_user(user: dict = Depends(get_current_user), db: Session = D
     return user
 
 
-# ---- Cookie session support (Render/HTTPS) ----
-SESSION_COOKIE = "app_session"
-SESSION_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", "1800"))
-
-def _get_session_user(session: str | None, db: Session) -> models.User | None:
-    if not session:
-        return None
-    rec = crud.get_session(db, session)
-    if not rec:
-        return None
-    if rec.expires_at <= int(time.time()):
-        return None
-    return rec.user
-
-def require_auth(
-    session: str | None = Cookie(default=None, alias=SESSION_COOKIE),
-    credentials: HTTPAuthorizationCredentials | None = Depends(security),
-    db: Session = Depends(get_db),
-) -> dict:
-    # Prefer cookie session
-    user_obj = _get_session_user(session, db)
-    if user_obj is not None:
-        email = user_obj.email or ""
-        domain = email.split("@", 1)[-1].lower() if "@" in email else None
-        if domain != "ucdavis.edu":
-            raise HTTPException(403, "Email domain not allowed")
-        return {"sub": user_obj.sub, "email": user_obj.email, "name": user_obj.name, "picture": user_obj.picture}
-
-    # Fallback to bearer
-    if credentials is None or credentials.scheme.lower() != "bearer":
-        raise HTTPException(401, "Missing auth")
-    claims = verify_google_token(credentials.credentials)
-    email = str(claims.get("email") or "")
-    domain = email.split("@", 1)[-1].lower() if "@" in email else None
-    if domain != "ucdavis.edu":
-        raise HTTPException(403, "Email domain not allowed")
-    try:
-        sub = str(claims.get("sub"))
-        if sub:
-            crud.get_or_create_user_by_sub(db, sub, email=email, name=claims.get("name"), picture=claims.get("picture"))
-    except Exception:
-        pass
-    return claims
-
-@app.post("/auth/google")
-def auth_google(token: str = Body(..., embed=True), response: Response | None = None, db: Session = Depends(get_db)):
-    claims = verify_google_token(token)
-    email = str(claims.get("email") or "")
-    domain = email.split("@", 1)[-1].lower() if "@" in email else None
-    if domain != "ucdavis.edu":
-        raise HTTPException(403, "Email domain not allowed")
-    sub = str(claims.get("sub"))
-    user = crud.get_or_create_user_by_sub(db, sub, email=email, name=claims.get("name"), picture=claims.get("picture"))
-    sess = crud.create_session(db, user, ttl_seconds=SESSION_TTL_SECONDS)
-    if response is None:
-        response = Response()
-    response.set_cookie(SESSION_COOKIE, sess.token, httponly=True, secure=False, samesite="lax", max_age=SESSION_TTL_SECONDS, path="/")
-    return {"ok": True}
-
-@app.post("/auth/logout")
-def auth_logout(response: Response, session: str | None = Cookie(default=None, alias=SESSION_COOKIE), db: Session = Depends(get_db)):
-    if session:
-        try:
-            crud.delete_session(db, session)
-        except Exception:
-            pass
-    response.delete_cookie(SESSION_COOKIE, path="/")
-    return {"ok": True}
+ # Removed legacy /api/auth/google since we verify tokens per request
 
 
 # ---- DB init (no Alembic for MVP) ----
