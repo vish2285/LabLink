@@ -1,6 +1,8 @@
 import type { Professor, StudentProfile, MatchResult } from '../types'
 
-const API_BASE = (import.meta as any).env?.VITE_API_BASE ? String((import.meta as any).env.VITE_API_BASE) : ''
+// Normalize optional API base to avoid double slashes when joining paths
+const RAW_BASE = (import.meta as any).env?.VITE_API_BASE ? String((import.meta as any).env.VITE_API_BASE) : ''
+const API_BASE = RAW_BASE ? RAW_BASE.replace(/\/+$/, '') : ''
 
 async function getAuthToken(): Promise<string | null> {
   try {
@@ -17,7 +19,12 @@ async function authorizedFetch(input: RequestInfo, init: RequestInit = {}) {
     ...(init.headers as Record<string, string> | undefined),
   }
   if (token) headers['Authorization'] = `Bearer ${token}`
-  let res = await fetch(input, { ...init, headers })
+  // Normalize accidental double slashes in path
+  let req: RequestInfo = input
+  if (typeof input === 'string' && input.startsWith('//')) {
+    req = input.replace(/^\/\/+/, '/')
+  }
+  let res = await fetch(req, { ...init, headers })
   if (res.status === 401) {
     // Try prompting Google for a fresh token once
     try {
@@ -49,7 +56,7 @@ async function authorizedFetch(input: RequestInfo, init: RequestInit = {}) {
         ...(init.headers as Record<string, string> | undefined),
       }
       if (t2) headers2['Authorization'] = `Bearer ${t2}`
-      res = await fetch(input, { ...init, headers: headers2 })
+      res = await fetch(req, { ...init, headers: headers2 })
     } catch {}
     // If still unauthorized, clear token and redirect to sign-in preserving return path
     if (res.status === 401) {
