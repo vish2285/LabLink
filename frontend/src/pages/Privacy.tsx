@@ -1,5 +1,3 @@
-import React from 'react'
-
 export default function Privacy() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 text-slate-800 dark:text-slate-200">
