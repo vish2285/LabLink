@@ -55,7 +55,7 @@ export default function Header() {
           </Link>
         </div>
 
-        <nav className={classNames('lg:flex items-center gap-6', open ? 'block' : 'hidden lg:block')}>
+        <nav className="hidden lg:flex items-center gap-6">
           <ul className="flex items-center gap-6">
             {[
               { title: 'Home', path: '/' },
