@@ -7,6 +7,7 @@ export default function Footer() {
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
             <a className="hover:underline hover:text-slate-900 dark:hover:text-white" href="/about">About</a>
             <a className="hover:underline hover:text-slate-900 dark:hover:text-white" href="/feedback">Feedback</a>
+            <a className="hover:underline hover:text-slate-900 dark:hover:text-white" href="/privacy">Privacy</a>
             <a className="hover:underline hover:text-slate-900 dark:hover:text-white" href="mailto:lablinkdavis@gmail.com">Email</a>
           </nav>
           <p className="text-xs text-slate-500 dark:text-slate-400">© {new Date().getFullYear()} LabLink</p>

@@ -8,6 +8,7 @@ import Landing from './pages/Landing.tsx'
 import Footer from './components/Footer.tsx'
 import About from './pages/About.tsx'
 import Feedback from './pages/Feedback.tsx'
+import Privacy from './pages/Privacy.tsx'
 import { useApp } from './context/AppContext'
 import { useAuth } from './auth/AuthContext'
 import SignIn from './pages/SignIn'
@@ -38,6 +39,7 @@ function App() {
             />
             <Route path="/about" element={<About />} />
             <Route path="/feedback" element={<Feedback />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="/sign-in" element={<SignIn />} />
           </Routes>
         </main>
