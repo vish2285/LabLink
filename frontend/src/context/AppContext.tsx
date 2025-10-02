@@ -39,14 +39,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return raw ? (JSON.parse(raw) as MatchResult[]) : []
     } catch { return [] }
   })
-  const [selectedProfessor, setSelectedProfessor] = useState<Professor | null>(null)
+  const [selectedProfessor, setSelectedProfessor] = useState<Professor | null>(() => {
+    try {
+      if (typeof window === 'undefined') return null
+      const raw = window.localStorage.getItem('app_selected_professor')
+      return raw ? (JSON.parse(raw) as Professor) : null
+    } catch { return null }
+  })
   const [emailDraft, setEmailDraft] = useState<string>(() => {
     try {
       if (typeof window === 'undefined') return ''
       return window.localStorage.getItem('app_email_draft') || ''
     } catch { return '' }
   })
-  const [emailSubject, setEmailSubject] = useState<string>('')
+  const [emailSubject, setEmailSubject] = useState<string>(() => {
+    try {
+      if (typeof window === 'undefined') return ''
+      return window.localStorage.getItem('app_email_subject') || ''
+    } catch { return '' }
+  })
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = typeof window !== 'undefined' ? (localStorage.getItem('theme') as 'light' | 'dark' | null) : null
     if (saved === 'light' || saved === 'dark') return saved
@@ -75,6 +86,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try { window.localStorage.setItem('app_email_subject', emailSubject || '') } catch {}
   }, [emailSubject])
+  useEffect(() => {
+    try {
+      if (selectedProfessor) window.localStorage.setItem('app_selected_professor', JSON.stringify(selectedProfessor))
+      else window.localStorage.removeItem('app_selected_professor')
+    } catch {}
+  }, [selectedProfessor])
 
   const value = useMemo<AppContextValue>(
     () => ({

@@ -51,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return t ? decodeIdToken(t) : null
   })
 
+
   useEffect(() => {
     // Handle Google One Tap or standard button callbacks writing token to storage
     const handler = (e: MessageEvent) => {
@@ -159,5 +160,7 @@ export function useAuth(): AuthContextValue {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')
   return ctx
 }
+
+
 
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import Button from '../components/Button'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
@@ -20,6 +21,10 @@ export default function ProfileForm() {
   const [departments, setDepartments] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const INTEREST_EXAMPLES = ['machine learning', 'natural language processing', 'computer vision', 'distributed systems']
+  const SKILL_EXAMPLES = ['python', 'pytorch', 'sql', 'c++', 'c']
+  const [interestIdx, setInterestIdx] = useState(0)
+  const [skillIdx, setSkillIdx] = useState(0)
 
   useEffect(() => {
     // Load any saved draft from localStorage (persists across sign out)
@@ -71,11 +76,26 @@ export default function ProfileForm() {
     } catch {}
   }, [interestsList, skillsList, department])
 
+  // Cycle animated example hints while fields are empty
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      setInterestIdx(i => (i + 1) % INTEREST_EXAMPLES.length)
+      setSkillIdx(i => (i + 1) % SKILL_EXAMPLES.length)
+    }, 2000)
+    return () => window.clearInterval(t)
+  }, [])
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setLoading(true)
     try {
+      // Client-side guard for empty inputs
+      if (interestsList.length === 0 && skillsList.length === 0) {
+        setLoading(false)
+        setError('Enter skills/interests.')
+        return
+      }
       const payload = {
         interests: interestsList.join(', '),
         skills: skillsList.join(', '),
@@ -86,7 +106,10 @@ export default function ProfileForm() {
       setResults(results)
       navigate('/results')
     } catch (err: any) {
-      setError(err?.message || 'Failed to match')
+      const msg = String(err?.message || '')
+      if (msg.includes('Provide at least interests or skills')) setError('Enter skills/interests')
+      else if (!msg || msg === 'Failed to match') setError('Something went wrong. Try again.')
+      else setError(msg)
     } finally {
       setLoading(false)
     }
@@ -113,6 +136,15 @@ export default function ProfileForm() {
           </div>
           <div className="w-full max-w-md">
             <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Interests</label>
+            {interestsList.length === 0 && (
+              <div className="mt-1 h-5 overflow-hidden text-xs text-slate-500 dark:text-slate-400">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span key={INTEREST_EXAMPLES[interestIdx]} initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -12, opacity: 0 }} transition={{ duration: 0.3 }}>
+                    e.g., {INTEREST_EXAMPLES[interestIdx]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+            )}
             <div className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 bg-white dark:bg-slate-900 px-2 py-2">
               <div className="flex flex-wrap gap-2">
                 {interestsList.map((t, i) => (
@@ -124,7 +156,7 @@ export default function ProfileForm() {
                 <input
                   className="flex-1 min-w-[10ch] bg-transparent outline-none text-sm text-slate-900 dark:text-slate-100 px-2 py-1"
                   value={interestInput}
-                  placeholder="Type and press Enter"
+                  placeholder={interestsList.length === 0 ? 'Type and press Enter' : ''}
                   onChange={e => setInterestInput(e.target.value)}
                   onKeyDown={e => {
                     if (e.key === 'Enter' || e.key === ',') {
@@ -149,10 +181,21 @@ export default function ProfileForm() {
                 />
               </div>
             </div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Press Enter to add. Click × to remove.</p>
+            {interestsList.length === 0 && (
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Press Enter to add. Click × to remove.</p>
+            )}
           </div>
           <div className="w-full max-w-md">
             <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Skills</label>
+            {skillsList.length === 0 && (
+              <div className="mt-1 h-5 overflow-hidden text-xs text-slate-500 dark:text-slate-400">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span key={SKILL_EXAMPLES[skillIdx]} initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -12, opacity: 0 }} transition={{ duration: 0.3 }}>
+                    e.g., {SKILL_EXAMPLES[skillIdx]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+            )}
             <div className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 bg-white dark:bg-slate-900 px-2 py-2">
               <div className="flex flex-wrap gap-2">
                 {skillsList.map((t, i) => (
@@ -164,7 +207,7 @@ export default function ProfileForm() {
                 <input
                   className="flex-1 min-w-[10ch] bg-transparent outline-none text-sm text-slate-900 dark:text-slate-100 px-2 py-1"
                   value={skillInput}
-                  placeholder="Type and press Enter"
+                  placeholder={skillsList.length === 0 ? 'Type and press Enter' : ''}
                   onChange={e => setSkillInput(e.target.value)}
                   onKeyDown={e => {
                     if (e.key === 'Enter' || e.key === ',') {
@@ -188,7 +231,9 @@ export default function ProfileForm() {
                 />
               </div>
             </div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Press Enter to add. Click × to remove.</p>
+            {skillsList.length === 0 && (
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Press Enter to add. Click × to remove.</p>
+            )}
           </div>
           {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
           <div className="flex justify-center w-full">

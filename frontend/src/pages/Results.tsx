@@ -108,7 +108,7 @@ export default function Results() {
                   )}
                 </div>
                 {/* First in center with brief glow */}
-                <motion.div className="relative" variants={item} transition={{ delay: 0.0, duration: 0.25 }}>
+                <motion.div className="relative smooth" variants={item} transition={{ delay: 0.0, duration: 0.25 }}>
                   {/* glow */}
                   <motion.div
                     className="pointer-events-none absolute -inset-3 rounded-2xl"

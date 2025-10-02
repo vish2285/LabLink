@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Button from '../components/Button'
+import { sendEmail } from '../lib/api'
 
 export default function Feedback() {
   const [text, setText] = useState('')
@@ -11,15 +12,12 @@ export default function Feedback() {
     e.preventDefault()
     try {
       setError(null)
-      const res = await fetch('/api/email/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: 'lablinkdavis@gmail.com', subject: 'LabLink feedback', body: `From: ${email || 'anonymous'}\n\n${text}` })
+      if (!text.trim()) throw new Error('Please enter feedback before sending.')
+      await sendEmail({
+        to: 'lablinkdavis@gmail.com',
+        subject: 'LabLink feedback',
+        body: `From: ${email || 'anonymous'}\n\n${text}`
       })
-      if (!res.ok) {
-        const t = await res.text().catch(() => '')
-        throw new Error(t || `Send failed (${res.status})`)
-      }
       setSent(true)
     } catch (err: any) {
       setError(err?.message || 'Failed to send. Is email configured on the server?')

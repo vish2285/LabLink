@@ -109,20 +109,27 @@ export default function ProfessorDetail() {
     <div className="mx-auto max-w-5xl p-6 text-slate-900 dark:text-slate-100">
       <div className="mb-6">
         <nav className="text-sm text-slate-600 dark:text-slate-400">
-          <Link to="/results" className="hover:text-slate-900 dark:hover:text-white">Results</Link>
+          <Link to="/results" className="hover:text-slate-900 dark:hover:text-white">Matches</Link>
           <span className="mx-2">/</span>
           <span className="text-slate-800 dark:text-slate-300">{professor.name}</span>
         </nav>
       </div>
 
-      <header className="mb-6">
-        <div className="flex items-center gap-4 mb-3">
-          <Avatar name={professor.name} photoUrl={professor.photo_url} />
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{professor.name}</h1>
+      <header className="mb-6 relative overflow-hidden rounded-2xl border border-slate-300/60 dark:border-white/10 bg-white/80 dark:bg-white/5 p-5 shadow-sm smooth">
+        <div className="pointer-events-none absolute -inset-1 opacity-60" style={{ background:
+          'radial-gradient(600px 160px at 0% 0%, rgba(124,196,255,0.18), rgba(124,196,255,0) 40%), radial-gradient(600px 160px at 100% 0%, rgba(255,191,0,0.15), rgba(255,191,0,0) 40%)'
+        }} />
+        <div className="relative flex items-center gap-4">
+          <div className="scale-110">
+            <Avatar name={professor.name} photoUrl={professor.photo_url} />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{professor.name}</h1>
+            {professor.department && (
+              <p className="text-slate-700 dark:text-slate-300 mt-1">{professor.department}</p>
+            )}
+          </div>
         </div>
-        {professor.department && (
-          <p className="text-slate-700 dark:text-slate-300 mt-1">{professor.department}</p>
-        )}
       </header>
 
       <section className="grid gap-6 lg:grid-cols-3">
@@ -179,12 +186,6 @@ export default function ProfessorDetail() {
                   <a href={`mailto:${professor.email}`} className="text-blue-700 hover:underline dark:text-[#7cc4ff]">{professor.email}</a>
                 </div>
               )}
-              {professor.profile_link && (
-                <div className="flex items-center justify-between">
-                  <span>Website</span>
-                  <a href={professor.profile_link} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline dark:text-[#7cc4ff]">Open</a>
-                </div>
-              )}
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2">
@@ -195,12 +196,12 @@ export default function ProfessorDetail() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center rounded-md border border-slate-300/60 dark:border-white/20 px-3 py-1.5 text-xs font-medium hover:bg-slate-900/5 dark:hover:bg-white/10 whitespace-nowrap"
                 >
-                  View Site
+                  View Website
                   <FiExternalLink className="ml-1 h-3 w-3 opacity-80" />
                 </a>
               ) : (
                 <button className="inline-flex items-center justify-center rounded-md border border-slate-300/60 dark:border-white/20 px-3 py-1.5 text-xs font-medium opacity-60 cursor-not-allowed whitespace-nowrap">
-                  View Site
+                  View Website
                   <FiExternalLink className="ml-1 h-3 w-3 opacity-60" />
                 </button>
               )}

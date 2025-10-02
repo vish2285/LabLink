@@ -55,7 +55,7 @@ export default function EmailEditor() {
       <div className="mx-auto w-full max-w-3xl px-1">
         <Link to="/results" className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
           <FiArrowLeft className="h-4 w-4" />
-          Back to Results
+          Back to Matches
         </Link>
       </div>
       <div className="mx-auto w-full max-w-3xl rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6 shadow-sm text-slate-900 dark:text-slate-100">
@@ -63,6 +63,23 @@ export default function EmailEditor() {
           <p className="text-sm text-slate-700 dark:text-slate-300">No professor selected. <Link to="/results" className="text-blue-700 dark:text-[#7cc4ff] underline">Go to results</Link></p>
         )}
         <div className="grid gap-5">
+          <div>
+            <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">To</label>
+            <div className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-3 py-2">
+              {selectedProfessor ? (
+                <span>
+                  {selectedProfessor.name}
+                  {selectedProfessor.email ? (
+                    <span className="text-slate-600 dark:text-slate-300"> {`<${selectedProfessor.email}>`}</span>
+                  ) : (
+                    <span className="text-slate-500 dark:text-slate-400"> (no email listed)</span>
+                  )}
+                </span>
+              ) : (
+                <span className="text-slate-500 dark:text-slate-400">No professor selected</span>
+              )}
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Subject</label>
             <input
@@ -165,7 +182,14 @@ export default function EmailEditor() {
                   const txt = await res.text().catch(() => '')
                   throw new Error(txt || 'Failed to send via Gmail')
                 }
-                alert('Email sent from your UC Davis account')
+                // Simple success toast
+                try {
+                  const el = document.createElement('div')
+                  el.className = 'fixed top-4 right-4 z-50 rounded-md bg-emerald-600 text-white px-4 py-2 shadow-lg smooth'
+                  el.textContent = 'Email sent!'
+                  document.body.appendChild(el)
+                  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300) }, 1500)
+                } catch {}
               } catch (e: any) {
                 alert(e?.message || 'Failed to send via Gmail')
               }

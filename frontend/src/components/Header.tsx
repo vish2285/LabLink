@@ -14,6 +14,7 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { theme, toggleTheme } = useApp()
   const { isSignedIn, signOut, user } = useAuth() as any
+  const { selectedProfessor } = useApp() as any
 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-200/60 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur">
@@ -59,8 +60,8 @@ export default function Header() {
             {[
               { title: 'Home', path: '/' },
               { title: 'Profile', path: '/profile' },
-              { title: 'Results', path: '/results' },
-              { title: 'Email', path: '/email' },
+              { title: 'Matches', path: '/results' },
+              ...(selectedProfessor ? [{ title: 'Email', path: '/email' }] : []),
             ].map(link => (
               <li key={link.title}>
                 <NavLink
@@ -126,8 +127,8 @@ export default function Header() {
           <ul className="mx-auto max-w-6xl px-4 py-3 space-y-2">
             {[
               { title: 'Profile', path: '/' },
-              { title: 'Results', path: '/results' },
-              { title: 'Email', path: '/email' },
+              { title: 'Matches', path: '/results' },
+              ...(selectedProfessor ? [{ title: 'Email', path: '/email' }] : []),
             ].map(l => (
               <li key={l.title}>
                 <NavLink

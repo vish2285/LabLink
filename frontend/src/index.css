@@ -32,3 +32,13 @@
     background-attachment: fixed;
   }
 }
+
+/* Global transitions */
+@layer components {
+  .smooth {
+    @apply transition duration-200 ease-out;
+  }
+  .smooth-fast {
+    @apply transition duration-150 ease-out;
+  }
+}
