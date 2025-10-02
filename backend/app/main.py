@@ -246,7 +246,7 @@ def to_prof_out(p) -> ProfessorOut:
     return ProfessorOut(
         id=p.id, name=p.name, department=p.department, email=p.email,
         research_interests=p.research_interests, profile_link=p.profile_link,
-        personal_site=PERSONAL_SITE_MAP.get(p.id, ""),
+        personal_site=(getattr(p, 'personal_site', '') or PERSONAL_SITE_MAP.get(p.id, "")),
         photo_url=getattr(p, 'photo_url', ''),
         skills=skills, recent_publications=pubs
     )
