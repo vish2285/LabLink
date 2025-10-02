@@ -98,7 +98,8 @@ export default function Results() {
           {/* Top 3 Ranking */}
           {results.length > 0 && (
             <motion.div className="mb-10" variants={container} initial="hidden" animate="show">
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-3 items-stretch">
+              {/* Desktop: 3-up layout. Hidden on mobile to avoid duplicate top card. */}
+              <div className="hidden md:grid gap-4 grid-cols-1 md:grid-cols-3 items-stretch">
                 {/* Second on left (hidden until its time) */}
                 <div className="hidden md:block">
                   {results[1] && (
@@ -132,7 +133,7 @@ export default function Results() {
                   )}
                 </div>
               </div>
-              {/* Fallback layout on mobile: show 1, then 2, then 3 stacked */}
+              {/* Mobile: stacked top 3 */}
               <div className="md:hidden grid gap-4">
                 <motion.div className="relative" variants={item} transition={{ delay: 0.0, duration: 0.25 }}>
                   <motion.div

@@ -126,7 +126,7 @@ export default function Header() {
         <div className="border-t border-slate-200/60 bg-white/80 dark:border-white/10 dark:bg-slate-900/80 lg:hidden">
           <ul className="mx-auto max-w-6xl px-4 py-3 space-y-2">
             {[
-              { title: 'Profile', path: '/' },
+              { title: 'Profile', path: '/profile' },
               { title: 'Matches', path: '/results' },
               ...(selectedProfessor ? [{ title: 'Email', path: '/email' }] : []),
             ].map(l => (
@@ -145,6 +145,26 @@ export default function Header() {
                 </NavLink>
               </li>
             ))}
+            {!isSignedIn ? (
+              <li>
+                <Link
+                  to="/sign-in"
+                  onClick={() => setOpen(false)}
+                  className="block rounded-lg px-3 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 text-center"
+                >
+                  Sign in
+                </Link>
+              </li>
+            ) : (
+              <li>
+                <button
+                  onClick={() => { setOpen(false); signOut() }}
+                  className="block w-full text-left rounded px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"
+                >
+                  Sign out
+                </button>
+              </li>
+            )}
             <li>
               <button
                 onClick={() => { toggleTheme(); setOpen(false) }}
