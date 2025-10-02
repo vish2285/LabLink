@@ -1,0 +1,11 @@
+# Database
+professors.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production

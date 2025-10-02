@@ -23,4 +23,18 @@ dist-ssr
 *.sln
 *.sw?
 
+<<<<<<< Updated upstream
 .env
+=======
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+# Database
+professors.db
+*.db
+*.sqlite
+*.sqlite3
+>>>>>>> Stashed changes
