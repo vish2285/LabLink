@@ -5,6 +5,10 @@ type Props = {
 }
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined
+const ALLOWED_EMAIL_DOMAINS = String(import.meta.env.VITE_ALLOWED_EMAIL_DOMAINS || 'ucdavis.edu')
+  .split(',')
+  .map(d => d.trim().toLowerCase())
+  .filter(Boolean)
 
 export default function GoogleAuth({ onLogin }: Props) {
   useEffect(() => {
@@ -28,13 +32,14 @@ export default function GoogleAuth({ onLogin }: Props) {
         }
       } catch {}
 
-      // Enforce UC Davis domain client-side to avoid confusing UX
+      // Enforce allowed domains client-side to avoid confusing UX
       try {
         const email: string | undefined = payload?.email
         const hd: string | undefined = payload?.hd
         const domain = email && email.includes('@') ? email.split('@').pop()?.toLowerCase() : undefined
-        if ((domain !== 'ucdavis.edu') && ((hd || '').toLowerCase() !== 'ucdavis.edu')) {
-          alert('Please use your @ucdavis.edu account to sign in.')
+        const allowed = new Set(ALLOWED_EMAIL_DOMAINS)
+        if ((!domain || !allowed.has(domain)) && (!hd || !allowed.has(hd.toLowerCase()))) {
+          alert(`Please sign in with your ${ALLOWED_EMAIL_DOMAINS.join(', ')} account.`)
           return
         }
       } catch {}

@@ -20,7 +20,14 @@ SKILL_ALIASES = {
     "cuda": "cuda", "nvidia-cuda": "cuda",
     "cpp": "c++", "c sharp": "c#", "postgres": "postgresql",
     "hpc": "high-performance computing",
-    "pl": "programming languages"
+    "pl": "programming languages",
+    "ml": "machine learning",
+    "dl": "deep learning",
+    "nlp": "natural language processing",
+    "cv": "computer vision",
+    "rl": "reinforcement learning",
+    "llm": "large language model",
+    "llms": "large language models",
 }
 
 def norm_text(s: str) -> str:

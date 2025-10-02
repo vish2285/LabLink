@@ -1,6 +1,8 @@
 # LabLink 🔎🧪
 Connect UC Davis students with professors aligned to their research interests, and draft a polished outreach email in one flow.
 
+**Live app**: `https://lablinkdavis.org` (update if your domain differs)
+
 Built with **React (Vite + TypeScript + Tailwind)** and **FastAPI + SQLAlchemy + SQLite**.
 
 ---
@@ -70,11 +72,21 @@ SMTP_USERNAME=yourgmail@gmail.com
 SMTP_PASSWORD=your_app_password
 SMTP_FROM=yourgmail@gmail.com
 ALLOWED_ORIGINS=http://localhost:5173
+# Comma-separated list of allowed student email domains (backend enforcement)
+ALLOWED_EMAIL_DOMAINS=ucdavis.edu
 ```
 
 Run API
 ```
 uvicorn app.main:app --reload --port 8000
+```
+
+Frontend env (optional, for friendlier domain prompt before server validation)
+```
+cd frontend
+cp .env.example .env # if you keep one; otherwise create .env
+# Comma-separated list mirroring backend domains for client-side UX
+VITE_ALLOWED_EMAIL_DOMAINS=ucdavis.edu
 ```
 
 ## ✨ Usage

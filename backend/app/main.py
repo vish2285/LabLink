@@ -31,6 +31,9 @@ load_dotenv()
 # ---- App & CORS ----
 app = FastAPI(title="LabLink DB API", version="1.0.0")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+ALLOWED_EMAIL_DOMAINS = [
+    d.strip().lower() for d in os.getenv("ALLOWED_EMAIL_DOMAINS", "ucdavis.edu").split(",") if d.strip()
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in ALLOWED_ORIGINS if o.strip()],
@@ -75,8 +78,9 @@ def require_ucdavis_user(user: dict = Depends(get_current_user), db: Session = D
     email = str(user.get("email") or "")
     domain = email.split("@", 1)[-1].lower() if "@" in email else None
     hd = str(user.get("hd") or "").lower() or None
-    if domain != "ucdavis.edu" and hd != "ucdavis.edu":
-        raise HTTPException(403, "Email domain not allowed")
+    allowed = set(ALLOWED_EMAIL_DOMAINS)
+    if (domain not in allowed) and (hd not in allowed):
+        raise HTTPException(403, f"Email domain not allowed. Allowed: {', '.join(sorted(allowed))}")
     # Upsert user record by Google sub
     try:
         sub = str(user.get("sub"))
