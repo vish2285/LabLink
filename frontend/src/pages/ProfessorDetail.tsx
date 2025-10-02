@@ -196,15 +196,33 @@ export default function ProfessorDetail() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center rounded-md border border-slate-300/60 dark:border-white/20 px-3 py-1.5 text-xs font-medium hover:bg-slate-900/5 dark:hover:bg-white/10 whitespace-nowrap"
                 >
-                  View Website
+                  UC Davis Page
                   <FiExternalLink className="ml-1 h-3 w-3 opacity-80" />
                 </a>
               ) : (
                 <button className="inline-flex items-center justify-center rounded-md border border-slate-300/60 dark:border-white/20 px-3 py-1.5 text-xs font-medium opacity-60 cursor-not-allowed whitespace-nowrap">
-                  View Website
+                  UC Davis Page
                   <FiExternalLink className="ml-1 h-3 w-3 opacity-60" />
                 </button>
               )}
+              {professor.personal_site ? (
+                <a
+                  href={professor.personal_site}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center rounded-md border border-slate-300/60 dark:border-white/20 px-3 py-1.5 text-xs font-medium hover:bg-slate-900/5 dark:hover:bg-white/10 whitespace-nowrap"
+                >
+                  Personal Site
+                  <FiExternalLink className="ml-1 h-3 w-3 opacity-80" />
+                </a>
+              ) : (
+                <button className="inline-flex items-center justify-center rounded-md border border-slate-300/60 dark:border-white/20 px-3 py-1.5 text-xs font-medium opacity-60 cursor-not-allowed whitespace-nowrap">
+                  Personal Site
+                  <FiExternalLink className="ml-1 h-3 w-3 opacity-60" />
+                </button>
+              )}
+            </div>
+            <div className="mt-3">
               <button
                 onClick={handleConnect}
                 className="inline-flex items-center justify-center rounded-md bg-[#1e3a8a] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#2544a0] whitespace-nowrap"

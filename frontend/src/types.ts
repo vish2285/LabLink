@@ -12,6 +12,7 @@ export type Professor = {
   email?: string;
   research_interests?: string;
   profile_link?: string;
+  personal_site?: string;
   photo_url?: string;
   skills: string[];
   recent_publications: Publication[];

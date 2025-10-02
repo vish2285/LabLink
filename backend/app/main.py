@@ -99,6 +99,8 @@ Base.metadata.create_all(bind=engine)
 VECSTORE: VectorStore | None = None
 DOCS: list[str] = []
 PROF_IDS: list[int] = []
+# Map professor id -> personal_site loaded from JSON (since not stored in DB)
+PERSONAL_SITE_MAP: dict[int, str] = {}
 
 def extract_publications(p) -> list[dict]:
     """Return publications as list of dicts from ORM relation or JSON fallback."""
@@ -144,6 +146,33 @@ def rebuild_vectorstore(db: Session):
         })
     DOCS = [prof_to_doc(x) for x in payloads]
     VECSTORE = VectorStore(DOCS)
+
+def load_personal_sites_from_json():
+    global PERSONAL_SITE_MAP
+    try:
+        here = os.path.dirname(os.path.abspath(__file__))
+        json_candidates = [
+            os.path.join(here, "data", "professors.json"),
+            os.path.join(here, "professors.json"),
+        ]
+        for jp in json_candidates:
+            if os.path.isfile(jp):
+                with open(jp, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, list):
+                    m: dict[int, str] = {}
+                    for obj in data:
+                        try:
+                            pid = int(obj.get("id")) if obj.get("id") is not None else None
+                            site = (obj.get("personal_site") or "").strip()
+                            if pid and site:
+                                m[pid] = site
+                        except Exception:
+                            continue
+                    PERSONAL_SITE_MAP = m
+                break
+    except Exception:
+        PERSONAL_SITE_MAP = {}
 
 @app.on_event("startup")
 def startup():
@@ -203,6 +232,8 @@ def startup():
         except Exception:
             # Ensure we don't block startup on seeding issues
             rebuild_vectorstore(db)
+        # Load personal_site map from JSON for API responses
+        load_personal_sites_from_json()
 
 # ---- Helpers ----
 def clamp01(x: float) -> float: return max(0.0, min(1.0, x))
@@ -215,6 +246,7 @@ def to_prof_out(p) -> ProfessorOut:
     return ProfessorOut(
         id=p.id, name=p.name, department=p.department, email=p.email,
         research_interests=p.research_interests, profile_link=p.profile_link,
+        personal_site=PERSONAL_SITE_MAP.get(p.id, ""),
         photo_url=getattr(p, 'photo_url', ''),
         skills=skills, recent_publications=pubs
     )
@@ -388,26 +420,50 @@ def email_send(
 @app.get("/api/scrape_photo")
 def scrape_photo(url: str):
     try:
-        resp = httpx.get(url, timeout=6.0)
+        resp = httpx.get(url, timeout=8.0, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+        })
         resp.raise_for_status()
         html = resp.text
 
-        def find_meta(pattern: str) -> str | None:
-            m = re.search(pattern, html, re.IGNORECASE)
+        def find(pattern: str) -> str | None:
+            m = re.search(pattern, html, re.IGNORECASE | re.DOTALL)
             return m.group(1).strip() if m else None
 
-        # Try OpenGraph
-        og = find_meta(r"<meta[^>]+property=[\'\"]og:image[\'\"][^>]+content=[\'\"]([^\'\"]+)[\'\"]")
-        if og:
-            return {"photo_url": urljoin(url, og)}
+        # OpenGraph variants
+        for pat in [
+            r"<meta[^>]+property=[\'\"]og:image:url[\'\"][^>]+content=[\'\"]([^\'\"]+)[\'\"]",
+            r"<meta[^>]+property=[\'\"]og:image[\'\"][^>]+content=[\'\"]([^\'\"]+)[\'\"]",
+            r"<meta[^>]+name=[\'\"]og:image[\'\"][^>]+content=[\'\"]([^\'\"]+)[\'\"]",
+        ]:
+            val = find(pat)
+            if val:
+                return {"photo_url": urljoin(url, val)}
 
-        # Try twitter:image
-        tw = find_meta(r"<meta[^>]+name=[\'\"]twitter:image[\'\"][^>]+content=[\'\"]([^\'\"]+)[\'\"]")
+        # Twitter card
+        tw = find(r"<meta[^>]+name=[\'\"]twitter:image[\'\"][^>]+content=[\'\"]([^\'\"]+)[\'\"]")
         if tw:
             return {"photo_url": urljoin(url, tw)}
 
-        # Fallback to first <img>
-        img = find_meta(r"<img[^>]+src=[\'\"]([^\'\"]+)[\'\"][^>]*>")
+        # <link rel="image_src">
+        link_img = find(r"<link[^>]+rel=[\'\"]image_src[\'\"][^>]+href=[\'\"]([^\'\"]+)[\'\"]")
+        if link_img:
+            return {"photo_url": urljoin(url, link_img)}
+
+        # UC Davis directory profile images
+        uc_img = find(r"<img[^>]+src=[\'\"]([^\'\"]*/styles/sf_profile/public/[^\'\"]+)[\'\"][^>]*>")
+        if uc_img:
+            return {"photo_url": urljoin(url, uc_img)}
+
+        # srcset attribute
+        srcset = find(r"<img[^>]+srcset=[\'\"]([^\'\"]+)[\'\"][^>]*>")
+        if srcset:
+            first = srcset.split(',')[0].strip().split()[0]
+            if first:
+                return {"photo_url": urljoin(url, first)}
+
+        # Any <img src="...">
+        img = find(r"<img[^>]+src=[\'\"]([^\'\"]+)[\'\"][^>]*>")
         if img:
             return {"photo_url": urljoin(url, img)}
 

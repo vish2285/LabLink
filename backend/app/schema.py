@@ -14,6 +14,7 @@ class ProfessorOut(BaseModel):
     email: Optional[str] = ""
     research_interests: Optional[str] = ""
     profile_link: Optional[str] = ""
+    personal_site: Optional[str] = ""
     photo_url: Optional[str] = ""
     skills: List[str] = []
     recent_publications: List[PublicationOut] = []
