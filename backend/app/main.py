@@ -236,7 +236,9 @@ def get_professor(professor_id: int, db: Session = Depends(get_db)):
 
 @app.get("/api/departments", response_model=list[str])
 def list_departments(db: Session = Depends(get_db)):
-    return crud.list_departments(db)
+    deps = crud.list_departments(db)
+    # Only expose Computer Science in the departments API
+    return [d for d in deps if (d or "").strip().lower() == "computer science"]
 
 @app.get("/api/reload_docs")
 def reload_docs(db: Session = Depends(get_db)):
