@@ -8,4 +8,9 @@ professors.db
 .env
 .env.local
 .env.development
-.env.production
+.env.production# Local databases and env files
+professors.db
+backend/professors.db
+.env
+**/.env
+*.env
