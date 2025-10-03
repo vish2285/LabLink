@@ -268,6 +268,10 @@ def to_prof_out(p) -> ProfessorOut:
 @app.get("/health")
 def health(): return {"ok": True}
 
+# Alias for frontend proxy that rewrites /api/* to the backend
+@app.get("/api/health")
+def api_health(): return {"ok": True}
+
 @app.get("/api/professors", response_model=list[ProfessorOut])
 def list_professors(department: str | None = Query(None), db: Session = Depends(get_db)):
     profs = crud.list_professors(db, department)
