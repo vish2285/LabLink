@@ -24,6 +24,7 @@ def seed_from_json(json_path: str):
                 email=p.get("email"),
                 research_interests=p.get("research_interests"),
                 profile_link=p.get("profile_link"),
+                personal_site=p.get("personal_site"),
                 photo_url=(p.get("photo_url") or ""),
             )
             db.add(prof)
