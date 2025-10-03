@@ -1,5 +1,5 @@
 # LabLink FastAPI (JSON-backed, skills-aware matching)
-from fastapi import FastAPI, Depends, HTTPException, Query, Body
+from fastapi import FastAPI, Depends, HTTPException, Query, Body, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -107,6 +107,8 @@ DOCS: list[str] = []
 PROF_IDS: list[int] = []
 # Map professor id -> personal_site loaded from JSON (since not stored in DB)
 PERSONAL_SITE_MAP: dict[int, str] = {}
+# Departments cache (avoid DB hits and enable fast responses)
+DEPTS_CACHE: list[str] = []
 
 def extract_publications(p) -> list[dict]:
     """Return publications as list of dicts from ORM relation or JSON fallback."""
@@ -241,6 +243,12 @@ def startup():
             rebuild_vectorstore(db)
         # Load personal_site map from JSON for API responses
         load_personal_sites_from_json()
+        # Warm departments cache at startup
+        try:
+            global DEPTS_CACHE
+            DEPTS_CACHE = crud.list_departments(db)
+        except Exception:
+            DEPTS_CACHE = []
 
 # ---- Helpers ----
 def clamp01(x: float) -> float: return max(0.0, min(1.0, x))
@@ -283,9 +291,17 @@ def get_professor(professor_id: int, db: Session = Depends(get_db)):
     return to_prof_out(p)
 
 @app.get("/api/departments", response_model=list[str])
-def list_departments(db: Session = Depends(get_db)):
-    # Always expose only Computer Science as the selectable department
-    return ["Computer Science"]
+def list_departments(response: Response, db: Session = Depends(get_db)):
+    # Serve cached list to avoid cold DB hits; refresh lazily on miss
+    global DEPTS_CACHE
+    if not DEPTS_CACHE:
+        try:
+            DEPTS_CACHE = crud.list_departments(db)
+        except Exception:
+            DEPTS_CACHE = []
+    # Set cache headers for browser/CDN
+    response.headers["Cache-Control"] = "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800"
+    return DEPTS_CACHE or ["Computer Science"]
 
 @app.get("/api/reload_docs")
 def reload_docs(db: Session = Depends(get_db)):
