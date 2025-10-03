@@ -1,11 +1,22 @@
+import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import GoogleAuth from '../components/GoogleAuth'
+import { useAuth } from '../auth/AuthContext'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined
 
 export default function SignIn() {
   const navigate = useNavigate()
   const location = useLocation() as { state?: { from?: string } }
+  const { isSignedIn } = useAuth()
+
+  // If already signed in, redirect away from sign-in page
+  useEffect(() => {
+    if (isSignedIn) {
+      const target = (location.state && location.state.from) ? (location.state as any).from : '/'
+      navigate(target, { replace: true })
+    }
+  }, [isSignedIn, location.state, navigate])
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
