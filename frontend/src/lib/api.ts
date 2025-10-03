@@ -81,7 +81,7 @@ export async function fetchProfessors(): Promise<Professor[]> {
 }
 
 export async function fetchDepartments(): Promise<string[]> {
-  const res = await authorizedFetch(`${API_BASE}/api/departments`)
+  const res = await fetch(`${API_BASE}/api/departments`, { credentials: 'omit' })
   if (!res.ok) throw new Error('Failed to load departments')
   return res.json()
 }
