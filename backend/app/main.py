@@ -18,7 +18,8 @@ from .schema import (
     MatchResponse, MatchItem, EmailRequest, EmailDraft
 )
 from .matching import (
-    prof_to_doc, VectorStore, extract_skills, jaccard, pubs_score, tokenize, norm_text
+    prof_to_doc, VectorStore, extract_skills, jaccard, pubs_score, tokenize, norm_text,
+    expand_query_text, SemanticIndex
 )
 from .email_utils import build_email, send_email_with_attachment
 import httpx
@@ -99,8 +100,9 @@ def require_ucdavis_user(user: dict = Depends(get_current_user), db: Session = D
 # ---- DB init (no Alembic for MVP) ----
 Base.metadata.create_all(bind=engine)
 
-# ---- Vector store (rebuilt on reload) ----
+# ---- Vector stores (rebuilt on reload) ----
 VECSTORE: VectorStore | None = None
+SEM_INDEX: SemanticIndex | None = None
 DOCS: list[str] = []
 PROF_IDS: list[int] = []
 # Map professor id -> personal_site loaded from JSON (since not stored in DB)
@@ -135,7 +137,7 @@ def extract_publications(p) -> list[dict]:
         return []
 
 def rebuild_vectorstore(db: Session):
-    global VECSTORE, DOCS, PROF_IDS
+    global VECSTORE, SEM_INDEX, DOCS, PROF_IDS
     profs = crud.list_professors(db)
     PROF_IDS = [p.id for p in profs]
     # flatten professor record to dict expected by prof_to_doc
@@ -150,6 +152,7 @@ def rebuild_vectorstore(db: Session):
         })
     DOCS = [prof_to_doc(x) for x in payloads]
     VECSTORE = VectorStore(DOCS)
+    SEM_INDEX = SemanticIndex(DOCS)
 
 def load_personal_sites_from_json():
     global PERSONAL_SITE_MAP
@@ -307,10 +310,15 @@ def match_professors(
 
     # prepare vector similarities once
     query_text = f"{profile.interests} {profile.skills or ''}".strip()
-    sims = VECSTORE.sims(query_text) if VECSTORE else [0.0] * len(PROF_IDS)
+    # Expand query for lexical recall
+    expanded_q = expand_query_text(profile.interests, profile.skills)
+    sims_lex = VECSTORE.sims(expanded_q) if VECSTORE else [0.0] * len(PROF_IDS)
+    # Semantic similarities (graceful fallback to zeros if unavailable)
+    sims_sem = (SEM_INDEX.sims(query_text) if SEM_INDEX else [0.0] * len(PROF_IDS))
 
     # map professor id -> sim (since VECSTORE order is all profs, not filtered)
-    id_to_sim = {pid: sims[i] for i, pid in enumerate(PROF_IDS)}
+    id_to_lex = {pid: sims_lex[i] for i, pid in enumerate(PROF_IDS)}
+    id_to_sem = {pid: sims_sem[i] for i, pid in enumerate(PROF_IDS)}
 
     # student skills and interests
     student_skills = extract_skills(profile.skills or "")
@@ -321,7 +329,13 @@ def match_professors(
 
     scored = []
     for p in profs:
-        sim_interests = clamp01(id_to_sim.get(p.id, 0.0))
+        # Blend lexical and semantic interests when semantic is available
+        lex = id_to_lex.get(p.id, 0.0)
+        sem = id_to_sem.get(p.id, 0.0)
+        if sem > 0.0:
+            sim_interests = clamp01(0.6 * lex + 0.4 * sem)
+        else:
+            sim_interests = clamp01(lex)
 
         prof_skills = [ps.skill.name for ps in p.professor_skills]
         jac, skill_hits = jaccard(student_skills, prof_skills)

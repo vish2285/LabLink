@@ -60,7 +60,7 @@ export default function Header() {
             {[
               { title: 'Home', path: '/' },
               { title: 'Profile', path: '/profile' },
-              { title: 'Matches', path: '/results' },
+              { title: 'Matches', path: '/matches' },
               ...(selectedProfessor ? [{ title: 'Email', path: '/email' }] : []),
             ].map(link => (
               <li key={link.title}>
@@ -127,7 +127,7 @@ export default function Header() {
           <ul className="mx-auto max-w-6xl px-4 py-3 space-y-2">
             {[
               { title: 'Profile', path: '/profile' },
-              { title: 'Matches', path: '/results' },
+              { title: 'Matches', path: '/matches' },
               ...(selectedProfessor ? [{ title: 'Email', path: '/email' }] : []),
             ].map(l => (
               <li key={l.title}>

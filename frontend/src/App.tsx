@@ -29,9 +29,10 @@ function App() {
               element={ isSignedIn ? <ProfileForm /> : <Navigate to="/sign-in" replace state={{ from: redirectPath }} /> }
             />
             <Route
-              path="/results"
+              path="/matches"
               element={ isSignedIn ? <Results /> : <Navigate to="/sign-in" replace state={{ from: redirectPath }} /> }
             />
+            <Route path="/results" element={<Navigate to="/matches" replace />} />
             <Route path="/professor/:id" element={<ProfessorDetail />} />
             <Route
               path="/email"

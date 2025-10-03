@@ -29,3 +29,6 @@ rank-bm25==0.2.2           # BM25 lexical scoring
 # Optional ML/DB (add when needed)
 # pandas==2.2.3
 # alembic==1.14.0
+
+# Semantic embeddings for improved interest matching (optional but recommended)
+sentence-transformers==2.6.1

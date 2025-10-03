@@ -53,14 +53,14 @@ export default function EmailEditor() {
   return (
     <div className="space-y-6">
       <div className="mx-auto w-full max-w-3xl px-1">
-        <Link to="/results" className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
+        <Link to="/matches" className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
           <FiArrowLeft className="h-4 w-4" />
           Back to Matches
         </Link>
       </div>
       <div className="mx-auto w-full max-w-3xl rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6 shadow-sm text-slate-900 dark:text-slate-100">
         {!selectedProfessor && (
-          <p className="text-sm text-slate-700 dark:text-slate-300">No professor selected. <Link to="/results" className="text-blue-700 dark:text-[#7cc4ff] underline">Go to results</Link></p>
+          <p className="text-sm text-slate-700 dark:text-slate-300">No professor selected. <Link to="/matches" className="text-blue-700 dark:text-[#7cc4ff] underline">Go to matches</Link></p>
         )}
         <div className="grid gap-5">
           <div>

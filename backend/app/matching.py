@@ -10,6 +10,17 @@ try:
 except Exception:
     SKLEARN_OK = False
 
+# Optional semantic embeddings (graceful fallback if not installed)
+try:
+    # sentence-transformers pulls in torch; if unavailable at runtime, we fallback
+    from sentence_transformers import SentenceTransformer  # type: ignore
+    import numpy as _np  # type: ignore
+    SEM_OK = True
+except Exception:
+    SentenceTransformer = None  # type: ignore
+    _np = None  # type: ignore
+    SEM_OK = False
+
 _WS = re.compile(r"\s+")
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
 
@@ -28,6 +39,24 @@ SKILL_ALIASES = {
     "rl": "reinforcement learning",
     "llm": "large language model",
     "llms": "large language models",
+}
+
+# Light synonym/alias expansion for interest phrases (used for query expansion only)
+# Keep compact and conservative to avoid noisy expansions
+INTEREST_ALIASES: Dict[str, List[str]] = {
+    "nlp": ["natural language processing", "computational linguistics"],
+    "natural language processing": ["nlp", "language models", "text processing"],
+    "cv": ["computer vision", "image recognition", "visual recognition"],
+    "computer vision": ["cv", "image understanding", "object detection"],
+    "ml": ["machine learning"],
+    "machine learning": ["ml", "statistical learning"],
+    "dl": ["deep learning"],
+    "deep learning": ["dl", "neural networks"],
+    "rl": ["reinforcement learning"],
+    "large language model": ["llm", "transformers"],
+    "large language models": ["llms", "foundation models"],
+    "gnn": ["graph neural networks", "graph learning"],
+    "graph neural networks": ["gnn", "graph representation learning"],
 }
 
 def norm_text(s: str) -> str:
@@ -72,6 +101,48 @@ def prof_to_doc(p: Dict[str, Any]) -> str:
     if p.get("skills"):
         parts.append(" ".join(p["skills"]))
     return norm_text(" ".join(parts).strip())
+
+def _normalize_interest_phrase(s: str) -> str:
+    return norm_text(s)
+
+def expand_query_text(interests: str, skills: str | None) -> str:
+    """Expand a user's query with conservative synonyms to improve lexical recall.
+
+    This does not modify stored documents; it only augments the query string fed to
+    the lexical vector store (TF-IDF/BM25) to help with common abbreviations.
+    """
+    base_parts: List[str] = [interests or ""]
+    if skills:
+        base_parts.append(skills)
+
+    expansions: List[str] = []
+    # Expand interest phrases by comma/semicolon to preserve multi-word units
+    for raw in re.split(r"[,;]", interests or ""):
+        phrase = _normalize_interest_phrase(raw)
+        if not phrase:
+            continue
+        # Exact phrase expansions
+        for x in INTEREST_ALIASES.get(phrase, []):
+            expansions.append(x)
+        # Also expand token-level abbreviations present in the phrase
+        for tok in tokenize(phrase):
+            for x in INTEREST_ALIASES.get(tok, []):
+                expansions.append(x)
+
+    # Expand skills via existing SKILL_ALIASES mapping
+    if skills:
+        for raw in re.split(r"[;,]", skills):
+            k = norm_text(raw).strip()
+            if not k:
+                continue
+            # Add alias if available
+            alias = SKILL_ALIASES.get(k) or SKILL_ALIASES.get(k.replace(" ", ""))
+            if alias and alias != k:
+                expansions.append(alias)
+
+    # Construct expanded query string
+    full = " ".join([p for p in base_parts if p] + expansions)
+    return norm_text(full)
 
 class VectorStore:
     def __init__(self, prof_docs: List[str]):
@@ -128,6 +199,48 @@ class VectorStore:
         if bm25_scores is not None:
             return bm25_scores
         return cov_scores or []
+
+
+class SemanticIndex:
+    """Lightweight wrapper around sentence-transformers for semantic similarity.
+
+    If dependencies are not available, this degrades to a no-op returning zeros.
+    """
+    def __init__(self, prof_docs: List[str]):
+        self.enabled = bool(SEM_OK and prof_docs)
+        self.docs = [norm_text(d) for d in (prof_docs or []) if (d or "").strip()]
+        self._model = None
+        self._emb = None
+        if self.enabled:
+            try:
+                # Use a small, widely-available model
+                self._model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")  # type: ignore
+                emb = self._model.encode(self.docs, normalize_embeddings=True, convert_to_numpy=True)  # type: ignore
+                # Ensure float32 and contiguous
+                self._emb = _np.ascontiguousarray(emb.astype("float32"))  # type: ignore
+            except Exception:
+                # Disable on any runtime error
+                self.enabled = False
+                self._model = None
+                self._emb = None
+
+    def sims(self, q: str) -> List[float]:
+        if not self.enabled or self._model is None or self._emb is None:
+            return [0.0 for _ in self.docs]
+        try:
+            qv = self._model.encode([norm_text(q)], normalize_embeddings=True, convert_to_numpy=True)  # type: ignore
+            qv32 = qv.astype("float32")  # type: ignore
+            # Cosine similarity is dot product when vectors are L2-normalized
+            sims = (qv32 @ self._emb.T)[0]  # type: ignore
+            # Convert to native Python floats and clamp to [0,1]
+            out = []
+            for x in sims.tolist():
+                # cosine may be slightly outside bounds due to numeric error
+                y = max(0.0, min(1.0, float(x)))
+                out.append(y)
+            return out
+        except Exception:
+            return [0.0 for _ in self.docs]
 
 def pubs_score(interests_tokens: List[str], pubs: List[Dict[str, Any]]) -> Tuple[float, List[str], float]:
     if not pubs or not interests_tokens: return 0.0, [], 1.0

@@ -104,7 +104,7 @@ export default function ProfileForm() {
       setProfile(payload)
       const results = await matchProfessors(payload, department || undefined)
       setResults(results)
-      navigate('/results')
+      navigate('/matches')
     } catch (err: any) {
       const msg = String(err?.message || '')
       if (msg.includes('Provide at least interests or skills')) setError('Enter skills/interests')

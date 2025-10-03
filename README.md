@@ -1,15 +1,16 @@
 # LabLink 🔎🧪
 Connect UC Davis students with professors aligned to their research interests, and draft a polished outreach email in one flow.
 
-**Live app**: `https://lablinkdavis.org` (update if your domain differs)
+**Live app**: `https://lablinkdavis.org` 
 
-Built with **React (Vite + TypeScript + Tailwind)** and **FastAPI + SQLAlchemy + SQLite**.
+Built with **React (Vite + TypeScript + Tailwind)** and **FastAPI + SQLAlchemy**, using **SQLite** locally and **PostgreSQL/Neon** in production. Matching blends lexical (TF‑IDF/BM25), semantic embeddings, skill overlap, and publication recency.
 
 ---
 
 ## 🚀 Features
 - Profile: interests, skills, optional department
-- Results: ranked matches with “why it matches” highlights
+- Matching: hybrid ranking (TF‑IDF + BM25 + semantic embeddings), skill coverage (F1 + Jaccard), publication recency
+- Results: ranked list with transparent “why it matches” highlights
 - Detail: professor profile, publications, skill tags
 - Email: generate a tailored message; send via SMTP with attachment (CV)
 - Polished UI: dark theme, responsive, subtle animations (Framer Motion)
@@ -18,8 +19,9 @@ Built with **React (Vite + TypeScript + Tailwind)** and **FastAPI + SQLAlchemy +
 
 ## 🗂 Tech Stack
 - Frontend: React 19, Vite, TypeScript, Tailwind, Framer Motion
-- Backend: FastAPI, SQLAlchemy, rank-bm25, optional scikit-learn
-- Database: SQLite (local). Postgres can be added in prod
+- Backend: FastAPI, SQLAlchemy, rank-bm25, sentence-transformers (embeddings), optional scikit-learn (TF‑IDF)
+- Database: SQLite (local). PostgreSQL (e.g., Neon) supported for production
+- Auth: Google OAuth (token verification) with domain enforcement
 - Email: SMTP (Gmail app password) or swap to SendGrid
 
 ---
@@ -64,8 +66,9 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Create `backend/.env` (Gmail SMTP example)
+Create `backend/.env` (minimal example)
 ```
+GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=yourgmail@gmail.com
@@ -74,12 +77,34 @@ SMTP_FROM=yourgmail@gmail.com
 ALLOWED_ORIGINS=http://localhost:5173
 # Comma-separated list of allowed student email domains (backend enforcement)
 ALLOWED_EMAIL_DOMAINS=ucdavis.edu
+# Optional (use Postgres instead of SQLite)
+# DATABASE_URL=postgresql://USER:PASS@HOST:PORT/DBNAME?sslmode=require
 ```
 
 Run API
 ```
 uvicorn app.main:app --reload --port 8000
 ```
+
+### Seed / Reseed from JSON
+The repository ships with `backend/app/data/professors.json`. You can wipe and reseed the DB at any time:
+
+SQLite (default)
+```
+cd backend
+python -m app.seed_json
+curl http://localhost:8000/api/reload_docs
+```
+
+PostgreSQL (Neon)
+```
+cd backend
+export DATABASE_URL='postgresql://USER:PASS@HOST:PORT/DBNAME?sslmode=require'
+python -m app.seed_json
+curl http://localhost:8000/api/reload_docs
+```
+
+`/api/reload_docs` rebuilds lexical and semantic indices without restarting the server.
 
 Frontend env (optional, for friendlier domain prompt before server validation)
 ```
@@ -95,9 +120,25 @@ VITE_ALLOWED_EMAIL_DOMAINS=ucdavis.edu
 3. Open Email (generate draft, edit)
 4. Attach CV (optional) and Send Email (SMTP) or open in Mail
 
+### Matching API (tunable weights)
+`POST /api/match?department=Computer%20Science&w_interests=0.55&w_skills=0.35&w_pubs=0.10`
+
+Body example:
+```
+{
+  "name": "Student",
+  "email": "student@ucdavis.edu",
+  "interests": "computer vision, robustness, NLP",
+  "skills": "python, pytorch, cuda"
+}
+```
+
+Response includes ranked matches with `score`, `score_percent`, and `why` details.
+
 ## 🔐 Notes
 - For Gmail, enable 2‑Step Verification and use an App Password
 - Or swap to SendGrid/SES by replacing the SMTP sender in `email_utils.py`
+ - Ensure your Google OAuth client matches allowed domains; backend verifies Google ID tokens and enforces `ALLOWED_EMAIL_DOMAINS`.
 
 ## 📄 License
 MIT

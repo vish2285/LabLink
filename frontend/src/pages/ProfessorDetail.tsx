@@ -100,7 +100,7 @@ export default function ProfessorDetail() {
     return (
       <div className="mx-auto max-w-4xl p-6">
         <p className="text-red-600">{error || 'Professor not found'}</p>
-        <Link to="/results" className="text-blue-600 underline">Back to results</Link>
+        <Link to="/matches" className="text-blue-600 underline">Back to matches</Link>
       </div>
     )
   }
@@ -109,7 +109,7 @@ export default function ProfessorDetail() {
     <div className="mx-auto max-w-5xl p-6 text-slate-900 dark:text-slate-100">
       <div className="mb-6">
         <nav className="text-sm text-slate-600 dark:text-slate-400">
-          <Link to="/results" className="hover:text-slate-900 dark:hover:text-white">Matches</Link>
+          <Link to="/matches" className="hover:text-slate-900 dark:hover:text-white">Matches</Link>
           <span className="mx-2">/</span>
           <span className="text-slate-800 dark:text-slate-300">{professor.name}</span>
         </nav>
