@@ -2,6 +2,7 @@ import re
 from typing import List, Dict, Any, Tuple
 from datetime import datetime
 from rank_bm25 import BM25Okapi
+import os
 
 try:
     from sklearn.feature_extraction.text import TfidfVectorizer
@@ -207,14 +208,17 @@ class SemanticIndex:
     If dependencies are not available, this degrades to a no-op returning zeros.
     """
     def __init__(self, prof_docs: List[str]):
-        self.enabled = bool(SEM_OK and prof_docs)
+        # Only enable if library is available AND explicitly enabled via env
+        env_enabled = str(os.getenv("SEMANTIC_ENABLED", "0")).lower() in {"1", "true", "yes"}
+        self.enabled = bool(SEM_OK and prof_docs and env_enabled)
         self.docs = [norm_text(d) for d in (prof_docs or []) if (d or "").strip()]
         self._model = None
         self._emb = None
         if self.enabled:
             try:
-                # Use a small, widely-available model
-                self._model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")  # type: ignore
+                # Allow overriding model; default to a small footprint
+                model_name = os.getenv("SEMANTIC_MODEL", "sentence-transformers/paraphrase-MiniLM-L3-v2")
+                self._model = SentenceTransformer(model_name)  # type: ignore
                 emb = self._model.encode(self.docs, normalize_embeddings=True, convert_to_numpy=True)  # type: ignore
                 # Ensure float32 and contiguous
                 self._emb = _np.ascontiguousarray(emb.astype("float32"))  # type: ignore

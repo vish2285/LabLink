@@ -106,6 +106,16 @@ curl http://localhost:8000/api/reload_docs
 
 `/api/reload_docs` rebuilds lexical and semantic indices without restarting the server.
 
+### Memory-constrained deploys (Render, etc.)
+Semantic embeddings are optional and disabled by default in production to avoid OOM on small instances. To enable:
+```
+# In your deploy environment
+SEMANTIC_ENABLED=1
+# Optional: choose a tiny model
+SEMANTIC_MODEL=sentence-transformers/paraphrase-MiniLM-L3-v2
+```
+If you omit `SEMANTIC_ENABLED`, the backend will run with purely lexical interest matching (TF‑IDF/BM25) and skills/publications.
+
 Frontend env (optional, for friendlier domain prompt before server validation)
 ```
 cd frontend
