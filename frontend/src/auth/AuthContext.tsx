@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!clientId || !w.google?.accounts?.id) return
       w.google.accounts.id.initialize({
         client_id: clientId,
-        auto_select: true,
+        auto_select: false,
         callback: (resp: any) => {
           const token = resp?.credential
           if (token) {

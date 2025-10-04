@@ -62,12 +62,13 @@ export default function GoogleAuth({ onLogin }: Props) {
         // Force a generic "Sign in with Google" button (no email shown)
         w.google.accounts.id.renderButton(el, {
           type: 'standard',
-          theme: 'filled_blue',
+          theme: 'outline',
           text: 'signin_with',
           size: 'large',
-          shape: 'pill',
+          shape: 'rectangular',
           logo_alignment: 'left',
-        })
+          width: 280,
+        } as any)
       }
       try { w.google.accounts.id.disable_auto_select?.() } catch {}
     } catch {}
