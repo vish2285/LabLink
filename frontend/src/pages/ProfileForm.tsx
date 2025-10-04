@@ -109,7 +109,7 @@ export default function ProfileForm() {
               value={department}
               onChange={e => setDepartment(e.target.value)}
             >
-              <option value="" disabled>Select a department</option>
+              <option value="" disabled>{departments.length ? 'Select a department' : 'No departments available'}</option>
               {departments.map(dep => (
                 <option key={dep} value={dep}>{dep}</option>
               ))}

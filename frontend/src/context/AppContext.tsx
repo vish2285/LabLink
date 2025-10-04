@@ -75,7 +75,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Departments cached in-memory and persisted with TTL
   const [departments, setDepartments] = useState<string[]>(() => {
     try {
-      if (typeof window === 'undefined') return ['Computer Science']
+      if (typeof window === 'undefined') return []
       const raw = window.localStorage.getItem(DEPTS_LS)
       const ts = Number(window.localStorage.getItem(DEPTS_TS_LS) || 0)
       if (raw && (Date.now() - ts) < DEPTS_TTL_MS) {
@@ -83,12 +83,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (Array.isArray(deps) && deps.length) return deps
       }
     } catch {}
-    return ['Computer Science']
+    return []
   })
 
   const ensureDepartments = async (): Promise<void> => {
     try {
-      if (departments && departments.length > 0 && departments[0] !== 'Computer Science') return
       const res = await fetch('/api/departments', { credentials: 'omit' })
       if (res.ok) {
         const deps = await res.json()
