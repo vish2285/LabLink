@@ -40,59 +40,59 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
   return (
     <div className={`relative rounded-xl border ${containerAccent} bg-white/70 dark:border-white/10 dark:bg-white/5 transition-transform duration-300 ease-out hover:-translate-y-1 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/20 will-change-transform`}>
       {typeof rank === 'number' && (
-        <div className="absolute -top-3 -left-3">
+        <div className="absolute -top-2 -left-2 sm:-top-3 sm:-left-3">
           <div className={`${rankSizeClass} rounded-full bg-gradient-to-br ${rankBadgeClass} text-white font-bold flex items-center justify-center shadow-md`}>
             {rank}
           </div>
         </div>
       )}
-      <div className="p-4 sm:p-6">
-        <div className={`flex items-start justify-between mb-4 sm:mb-6`}>
-          <div className="flex-1">
-            <div className="mb-3">
+      <div className="p-3 sm:p-4 md:p-6">
+        <div className={`flex items-start justify-between mb-3 sm:mb-4 md:mb-6`}>
+          <div className="flex-1 min-w-0">
+            <div className="mb-2 sm:mb-3">
               {/* Slightly larger avatar for top match */}
               <div className={`${centered ? 'scale-125 origin-left inline-block' : ''}`}>
                 <Avatar name={professor.name} photoUrl={professor.photo_url} />
               </div>
             </div>
-            <h3 className={`${centered ? 'text-2xl md:text-3xl' : 'text-lg sm:text-xl'} font-semibold text-slate-900 dark:text-white mb-1`}>{professor.name}</h3>
+            <h3 className={`${centered ? 'text-xl sm:text-2xl md:text-3xl' : 'text-base sm:text-lg md:text-xl'} font-semibold text-slate-900 dark:text-white mb-1 truncate`}>{professor.name}</h3>
             {professor.department && (
-              <p className="text-slate-700 dark:text-slate-300 font-medium text-sm mb-2">{professor.department}</p>
+              <p className="text-slate-700 dark:text-slate-300 font-medium text-xs sm:text-sm mb-2 truncate">{professor.department}</p>
             )}
           </div>
-          <div className="flex flex-col items-end">
+          <div className="flex flex-col items-end ml-2">
             <MatchScoreBadge scorePercent={professor.score_percent || 0} />
           </div>
         </div>
 
         {professor.research_interests && (
-          <div className="mb-4">
-            <p className="text-slate-700 dark:text-slate-200 leading-relaxed text-sm line-clamp-3">{professor.research_interests}</p>
+          <div className="mb-3 sm:mb-4">
+            <p className="text-slate-700 dark:text-slate-200 leading-relaxed text-xs sm:text-sm line-clamp-2 sm:line-clamp-3">{professor.research_interests}</p>
           </div>
         )}
 
         {professor.skills && professor.skills.length > 0 && (
-          <div className="mb-4">
-            <TagList items={professor.skills} max={6} />
+          <div className="mb-3 sm:mb-4">
+            <TagList items={professor.skills} max={4} />
           </div>
         )}
 
         {professor.why && (
-          <div className="mb-6 p-4 rounded-lg border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5">
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5">
             <div className="space-y-2">
               {professor.why.interests_hits.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full"></span>
+                  <span className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full flex-shrink-0"></span>
                   <span className="text-xs text-slate-700 dark:text-slate-300">
-                    <span className="font-medium text-slate-900 dark:text-white">Interests:</span> {professor.why.interests_hits.slice(0, 3).join(', ')}
+                    <span className="font-medium text-slate-900 dark:text-white">Interests:</span> {professor.why.interests_hits.slice(0, 2).join(', ')}
                   </span>
                 </div>
               )}
               {professor.why.skills_hits.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full"></span>
+                  <span className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full flex-shrink-0"></span>
                   <span className="text-xs text-slate-700 dark:text-slate-300">
-                    <span className="font-medium text-slate-900 dark:text-white">Skills:</span> {professor.why.skills_hits.slice(0, 3).join(', ')}
+                    <span className="font-medium text-slate-900 dark:text-white">Skills:</span> {professor.why.skills_hits.slice(0, 2).join(', ')}
                   </span>
                 </div>
               )}
@@ -100,14 +100,16 @@ export default function ProfessorCard({ professor, onSelect, centered = false, r
           </div>
         )}
 
-        <div className="mt-2 grid grid-cols-2 gap-2 sm:gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/professor/${professor.id}`)}>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/professor/${professor.id}`)} className="text-xs sm:text-sm">
             <FiExternalLink className="w-3 h-3 mr-1" />
-            View Profile
+            <span className="hidden sm:inline">View Profile</span>
+            <span className="sm:hidden">View</span>
           </Button>
-          <Button size="sm" onClick={onSelect}>
+          <Button size="sm" onClick={onSelect} className="text-xs sm:text-sm">
             <FiMail className="w-3 h-3 mr-1" />
-            Draft Email
+            <span className="hidden sm:inline">Draft Email</span>
+            <span className="sm:hidden">Email</span>
           </Button>
         </div>
       </div>

@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react'
 import { matchProfessors } from '../lib/api'
 import ProfessorCard from '../components/ProfessorCard'
 import EmptyState from '../components/EmptyState'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { ResultsSkeleton, ProfessorCardSkeleton } from '../components/SkeletonLoader'
 
 export default function Results() {
   const navigate = useNavigate()
@@ -57,16 +59,20 @@ export default function Results() {
     navigate('/email')
   }
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16 min-h-[60vh]">
-        <div className="text-slate-700 dark:text-slate-300">Loading matches…</div>
-      </div>
-    )
+    return <ResultsSkeleton />
   }
   if (error) {
     return (
-      <div className="flex items-center justify-center py-16 min-h-[60vh]">
-        <div className="text-red-600 dark:text-red-400">{error}</div>
+      <div className="flex items-center justify-center py-16 min-h-[60vh] px-4">
+        <div className="text-center max-w-md">
+          <div className="text-red-600 dark:text-red-400 mb-4">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            Try again
+          </button>
+        </div>
       </div>
     )
   }
@@ -82,11 +88,11 @@ export default function Results() {
         animate="show"
       >
         <div className="text-center space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Top Matches</h1>
-          <p className="text-slate-700/90 dark:text-slate-300/90">Discover UC Davis professors aligned with your interests and skills.</p>
-          <div className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-            <Link to="/profile" className="hover:text-slate-900 dark:hover:text-white">Edit Profile</Link>
-            <span>•</span>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Top Matches</h1>
+          <p className="text-sm sm:text-base text-slate-700/90 dark:text-slate-300/90 px-4">Discover UC Davis professors aligned with your interests and skills.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 text-sm text-slate-600 dark:text-slate-400">
+            <Link to="/profile" className="hover:text-slate-900 dark:hover:text-white underline sm:no-underline">Edit Profile</Link>
+            <span className="hidden sm:inline">•</span>
             <span>{results.length} matches found</span>
           </div>
         </div>
