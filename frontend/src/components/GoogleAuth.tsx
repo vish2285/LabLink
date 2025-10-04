@@ -65,7 +65,15 @@ export default function GoogleAuth({ onLogin }: Props) {
       })
       const el = document.getElementById('googleSignInDiv')
       if (el) {
-        w.google.accounts.id.renderButton(el, { theme: 'filled_blue', size: 'large', shape: 'pill' })
+        // Force a generic "Sign in with Google" button (no email shown)
+        w.google.accounts.id.renderButton(el, {
+          type: 'standard',
+          theme: 'filled_blue',
+          text: 'signin_with',
+          size: 'large',
+          shape: 'pill',
+          logo_alignment: 'left',
+        })
       }
       try { w.google.accounts.id.disable_auto_select?.() } catch {}
     } catch {}
