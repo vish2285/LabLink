@@ -69,14 +69,21 @@ pip install -r requirements.txt
 Create `backend/.env` (minimal example)
 ```
 GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
+ALLOWED_ORIGINS=http://localhost:5173
+ALLOWED_EMAIL_DOMAINS=ucdavis.edu
+ALLOWED_HOSTS=
+SESSION_COOKIE_NAME=lablink_session
+SESSION_TTL_SECONDS=1800
+COOKIE_DOMAIN=
+COOKIE_SECURE=0
+COOKIE_SAMESITE=lax
+HSTS_ENABLED=1
+# SMTP (if sending via server)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=yourgmail@gmail.com
 SMTP_PASSWORD=your_app_password
 SMTP_FROM=yourgmail@gmail.com
-ALLOWED_ORIGINS=http://localhost:5173
-# Comma-separated list of allowed student email domains (backend enforcement)
-ALLOWED_EMAIL_DOMAINS=ucdavis.edu
 # Optional (use Postgres instead of SQLite)
 # DATABASE_URL=postgresql://USER:PASS@HOST:PORT/DBNAME?sslmode=require
 ```
@@ -116,12 +123,12 @@ SEMANTIC_MODEL=sentence-transformers/paraphrase-MiniLM-L3-v2
 ```
 If you omit `SEMANTIC_ENABLED`, the backend will run with purely lexical interest matching (TF‑IDF/BM25) and skills/publications.
 
-Frontend env (optional, for friendlier domain prompt before server validation)
+Frontend env (for GIS client ID)
 ```
 cd frontend
-cp .env.example .env # if you keep one; otherwise create .env
-# Comma-separated list mirroring backend domains for client-side UX
+VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
 VITE_ALLOWED_EMAIL_DOMAINS=ucdavis.edu
+VITE_API_BASE=
 ```
 
 ## ✨ Usage

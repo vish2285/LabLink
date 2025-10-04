@@ -15,9 +15,7 @@ export default function EmailEditor() {
   const [file, setFile] = useReactState<File | null>(null)
   const [subjectText, setSubjectText] = useState<string>(emailSubject || '')
   
-  console.log('EmailEditor - selectedProfessor:', selectedProfessor)
-  console.log('EmailEditor - emailDraft:', emailDraft)
-  console.log('EmailEditor - profile:', profile)
+  // Remove verbose logs in production for privacy
   
   const body = useMemo(
     () => generatedEmail?.body || emailDraft,
@@ -114,75 +112,25 @@ export default function EmailEditor() {
                 alert('Selected professor has no valid email address.')
                 return
               }
-              const w: any = window as any
-              const clientId = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID as string | undefined
-              if (!clientId || !w.google?.accounts?.oauth2?.initTokenClient) {
-                alert('Google OAuth not available')
-                return
-              }
-              const scope = 'https://www.googleapis.com/auth/gmail.send'
-              const token: { access_token?: string } = {}
-              const tokenClient = w.google.accounts.oauth2.initTokenClient({
-                client_id: clientId,
-                scope,
-                prompt: 'consent',
-                callback: (resp: any) => { token.access_token = resp?.access_token }
-              })
-              await new Promise<void>((resolve) => {
-                tokenClient.requestAccessToken({ prompt: 'consent' })
-                const check = () => {
-                  if (token.access_token) resolve()
-                  else setTimeout(check, 200)
-                }
-                check()
-              })
-              const fromEmail = user?.email || ''
-              const fromName = user?.name || 'UC Davis Student'
-              const bodyText = body
-              let mime = ''
-              const subj = subjectText
-              if (file) {
-                const arr = await file.arrayBuffer()
-                const b64file = btoa(String.fromCharCode(...new Uint8Array(arr)))
-                const boundary = `lablink-${Math.random().toString(36).slice(2)}`
-                const safeName = fromName.replace(/"/g, "'")
-                const fileType = file.type || 'application/octet-stream'
-                const fileName = file.name.replace(/"/g, '')
-                mime = `From: "${safeName}" <${fromEmail}>\r\n`+
-                       `To: ${to}\r\n`+
-                       `Subject: ${subj}\r\n`+
-                       `Reply-To: ${fromEmail}\r\n`+
-                       `MIME-Version: 1.0\r\n`+
-                       `Content-Type: multipart/mixed; boundary="${boundary}"\r\n\r\n`+
-                       `--${boundary}\r\n`+
-                       `Content-Type: text/plain; charset="UTF-8"\r\n`+
-                       `Content-Transfer-Encoding: 7bit\r\n\r\n`+
-                       `${bodyText}\r\n\r\n`+
-                       `--${boundary}\r\n`+
-                       `Content-Type: ${fileType}; name="${fileName}"\r\n`+
-                       `Content-Disposition: attachment; filename="${fileName}"\r\n`+
-                       `Content-Transfer-Encoding: base64\r\n\r\n`+
-                       `${b64file}\r\n`+
-                       `--${boundary}--`
-              } else {
-                mime = `From: "${fromName.replace(/"/g, "'")}" <${fromEmail}>\r\nTo: ${to}\r\nSubject: ${subj}\r\nReply-To: ${fromEmail}\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n${bodyText}`
-              }
-              function toBase64Url(input: string): string {
-                const utf8 = unescape(encodeURIComponent(input))
-                const b64 = btoa(utf8)
-                return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
-              }
               try {
-                const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-                  method: 'POST',
-                  headers: { 'Authorization': `Bearer ${token.access_token}`, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ raw: toBase64Url(mime) })
-                })
-                if (!res.ok) {
-                  const txt = await res.text().catch(() => '')
-                  throw new Error(txt || 'Failed to send via Gmail')
+                let file_b64: string | undefined
+                let filename: string | undefined
+                if (file) {
+                  const arr = await file.arrayBuffer()
+                  // Base64 without data URL prefix
+                  file_b64 = btoa(String.fromCharCode(...new Uint8Array(arr)))
+                  filename = file.name
                 }
-                // Simple success toast
+                const resp = await fetch('/api/email/send', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({ to, subject: subjectText, body, filename, file_b64 }),
+                })
+                if (!resp.ok) {
+                  const txt = await resp.text().catch(() => '')
+                  throw new Error(txt || 'Failed to send email')
+                }
                 try {
                   const el = document.createElement('div')
                   el.className = 'fixed top-4 right-4 z-50 rounded-md bg-emerald-600 text-white px-4 py-2 shadow-lg smooth'
@@ -191,7 +139,7 @@ export default function EmailEditor() {
                   setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300) }, 1500)
                 } catch {}
               } catch (e: any) {
-                alert(e?.message || 'Failed to send via Gmail')
+                alert(e?.message || 'Failed to send email')
               }
             }}>
               <FiMail className="h-4 w-4 mr-2" />

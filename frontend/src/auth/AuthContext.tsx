@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { fetchMe, loginWithIdToken, logout as apiLogout } from '../lib/api'
 
 type AuthUser = {
   email: string
@@ -41,14 +42,14 @@ function decodeIdToken(token: string): AuthUser | null {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [idToken, setIdToken] = useState<string | null>(
-    () => window.localStorage.getItem(TOKEN_KEY)
-  )
+  const [idToken, setIdToken] = useState<string | null>(() => {
+    try { return window.localStorage.getItem(TOKEN_KEY) } catch { return null }
+  })
   const [user, setUser] = useState<AuthUser | null>(() => {
-    const raw = window.localStorage.getItem(USER_KEY)
-    if (raw) return JSON.parse(raw) as AuthUser
-    const t = window.localStorage.getItem(TOKEN_KEY)
-    return t ? decodeIdToken(t) : null
+    try {
+      const raw = window.localStorage.getItem(USER_KEY)
+      return raw ? (JSON.parse(raw) as AuthUser) : null
+    } catch { return null }
   })
 
 
@@ -59,18 +60,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const payload = (e.data as any)
       if (payload?.type === 'google-auth' && payload?.idToken) {
         const token = String(payload.idToken)
-        window.localStorage.setItem(TOKEN_KEY, token)
-        setIdToken(token)
-        let nextUser: AuthUser | null = null
-        if (payload.user) {
-          nextUser = payload.user as AuthUser
-        } else {
-          nextUser = decodeIdToken(token)
-        }
-        if (nextUser) {
-          window.localStorage.setItem(USER_KEY, JSON.stringify(nextUser))
-          setUser(nextUser)
-        }
+        // Exchange for HttpOnly session cookie
+        loginWithIdToken(token)
+          .then((resp) => {
+            try { window.localStorage.setItem(TOKEN_KEY, token) } catch {}
+            setIdToken(token)
+            const u: AuthUser | null = resp?.user ? { email: resp.user.email, name: resp.user.name, picture: resp.user.picture } : decodeIdToken(token)
+            if (u) {
+              try { window.localStorage.setItem(USER_KEY, JSON.stringify(u)) } catch {}
+              setUser(u)
+            }
+          })
+          .catch(() => {
+            // noop; login API will return error and page can surface it if needed
+          })
       }
     }
     window.addEventListener('message', handler)
@@ -115,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch { return null }
   }
 
-  // Schedule quiet refresh ~5 minutes before expiry
+  // Schedule quiet refresh ~5 minutes before expiry (for GIS One Tap)
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const w = window as any
@@ -137,11 +140,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     idToken,
     user,
     signOut: () => {
-      window.localStorage.removeItem(TOKEN_KEY)
-      window.localStorage.removeItem(USER_KEY)
+      try { window.localStorage.removeItem(TOKEN_KEY); window.localStorage.removeItem(USER_KEY) } catch {}
       setIdToken(null)
       setUser(null)
-      // Optional: fully revoke Google session to force chooser next time
+      apiLogout().catch(() => {})
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const w = window as any

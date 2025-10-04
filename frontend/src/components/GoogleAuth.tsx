@@ -45,14 +45,8 @@ export default function GoogleAuth({ onLogin }: Props) {
       } catch {}
 
       try {
-        const user = payload ? {
-          email: payload.email,
-          name: payload.name,
-          picture: payload.picture,
-        } : undefined
-        window.localStorage.setItem('google_id_token', idToken)
-        if (user) window.localStorage.setItem('google_user', JSON.stringify(user))
-        window.postMessage({ type: 'google-auth', idToken, user }, '*')
+        // Post only the token; AuthContext will exchange it for a cookie
+        window.postMessage({ type: 'google-auth', idToken }, '*')
         if (onLogin) onLogin(payload, idToken)
       } catch {}
     }

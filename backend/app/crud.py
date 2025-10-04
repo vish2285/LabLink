@@ -1,6 +1,7 @@
 # 🛠️ Helper functions to Create, Read, Update, Delete (CRUD) data in DB.
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
+import time
 from . import models
 import secrets, time
 
@@ -67,7 +68,16 @@ def create_session(db: Session, user: models.User, *, ttl_seconds: int = 1800) -
     return sess
 
 def get_session(db: Session, token: str) -> Optional[models.SessionToken]:
-    return db.query(models.SessionToken).filter(models.SessionToken.token == token).first()
+    obj = db.query(models.SessionToken).filter(models.SessionToken.token == token).first()
+    # Treat expired sessions as missing
+    if obj and obj.expires_at and obj.expires_at <= int(time.time()):
+        try:
+            db.delete(obj)
+            db.commit()
+        except Exception:
+            db.rollback()
+        return None
+    return obj
 
 def delete_session(db: Session, token: str) -> None:
     obj = db.query(models.SessionToken).filter(models.SessionToken.token == token).first()

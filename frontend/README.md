@@ -1,3 +1,14 @@
+## Env
+
+Create a `.env` with:
+
+```
+VITE_GOOGLE_CLIENT_ID=
+VITE_ALLOWED_EMAIL_DOMAINS=ucdavis.edu
+# Optional if you need to proxy to a remote API; otherwise leave empty to use /api rewrites
+VITE_API_BASE=
+```
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

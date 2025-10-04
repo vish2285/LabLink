@@ -15,9 +15,6 @@ google-auth==2.35.0
 psycopg[binary]==3.2.3
 requests==2.32.3
 
-# Database drivers (enable Postgres in production)
-psycopg[binary]==3.2.3
-
 # Matching (TF-IDF, cosine similarity) — optional for dev where build fails
 # Optional ML (disabled by default due to heavy wheels/build on some platforms)
 # scikit-learn==1.5.2

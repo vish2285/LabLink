@@ -1,7 +1,8 @@
 # LabLink FastAPI (JSON-backed, skills-aware matching)
-from fastapi import FastAPI, Depends, HTTPException, Query, Body
+from fastapi import FastAPI, Depends, HTTPException, Query, Body, Request, Response, Cookie
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy.orm import Session
 import os
 import csv
@@ -25,6 +26,8 @@ from .email_utils import build_email, send_email_with_attachment
 import httpx
 import base64
 from urllib.parse import urljoin
+from datetime import datetime, timedelta
+from typing import Optional
 
 # Load environment from .env (for SMTP, etc.)
 load_dotenv()
@@ -35,12 +38,15 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",
 ALLOWED_EMAIL_DOMAINS = [
     d.strip().lower() for d in os.getenv("ALLOWED_EMAIL_DOMAINS", "ucdavis.edu").split(",") if d.strip()
 ]
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()]
+if ALLOWED_HOSTS:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in ALLOWED_ORIGINS if o.strip()],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "X-Requested-With"],
 )
 """
 Google Identity Services auth: verify Google ID token (Authorization: Bearer <id_token>)
@@ -49,6 +55,16 @@ and enforce @ucdavis.edu domain.
 
 security = HTTPBearer(auto_error=False)
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+
+# ---- Session cookie config ----
+SESSION_COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "lablink_session")
+SESSION_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", "1800"))
+COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN") or None
+COOKIE_SECURE = str(os.getenv("COOKIE_SECURE", "1")).lower() in {"1", "true", "yes"}
+COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax").lower()
+
+# in-memory rate limit buckets
+_EMAIL_SEND_EVENTS: dict[str, list[int]] = {}
 
 def verify_google_token(token: str) -> dict:
     try:
@@ -69,9 +85,25 @@ def verify_google_token(token: str) -> dict:
         # Surface precise verification reason during debugging
         raise HTTPException(401, f"Invalid Google token: {e}")
 
-def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(security)) -> dict:
+def get_current_user(
+    request: Request,
+    db: Session = Depends(get_db),
+    session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+) -> dict:
+    # Prefer cookie-based session
+    if session_token:
+        sess = crud.get_session(db, session_token)
+        if not sess:
+            raise HTTPException(401, "Invalid or expired session")
+        user = db.query(models.User).filter(models.User.id == sess.user_id).first()
+        if not user:
+            raise HTTPException(401, "User not found")
+        return {"sub": f"session:{user.id}", "email": user.email, "name": user.name, "picture": user.picture}
+
+    # Fallback legacy Bearer Google ID token
     if credentials is None or credentials.scheme.lower() != "bearer":
-        raise HTTPException(401, "Missing bearer token")
+        raise HTTPException(401, "Missing authentication")
     token = credentials.credentials
     return verify_google_token(token)
 
@@ -271,6 +303,76 @@ def health(): return {"ok": True}
 @app.get("/api/health")
 def api_health(): return {"ok": True}
 
+# ---- Security headers ----
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    resp = await call_next(request)
+    try:
+        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        resp.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+        if str(os.getenv("HSTS_ENABLED", "1")).lower() in {"1", "true", "yes"}:
+            resp.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
+    except Exception:
+        pass
+    return resp
+
+# ---- Cookie-based auth endpoints ----
+@app.post("/api/auth/login")
+def auth_login(id_token: str = Body(..., embed=True), response: Response = None, db: Session = Depends(get_db)):
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(500, "Server misconfigured")
+    claims = verify_google_token(id_token)
+    email = str(claims.get("email") or "")
+    sub = str(claims.get("sub") or "")
+    name = claims.get("name")
+    picture = claims.get("picture")
+    if not (email and sub):
+        raise HTTPException(401, "Invalid token claims")
+    domain = email.split("@", 1)[-1].lower() if "@" in email else None
+    hd = str(claims.get("hd") or "").lower() or None
+    allowed = set(ALLOWED_EMAIL_DOMAINS)
+    if (domain not in allowed) and (hd not in allowed):
+        raise HTTPException(403, "Email domain not allowed")
+    user = crud.get_or_create_user_by_sub(db, sub, email=email, name=name, picture=picture)
+    sess = crud.create_session(db, user, ttl_seconds=SESSION_TTL_SECONDS)
+    if response is None:
+        response = Response()
+    expires = datetime.utcnow() + timedelta(seconds=SESSION_TTL_SECONDS)
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=sess.token,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="none" if COOKIE_SAMESITE == "none" else ("strict" if COOKIE_SAMESITE == "strict" else "lax"),
+        domain=COOKIE_DOMAIN,
+        expires=expires.strftime("%a, %d %b %Y %H:%M:%S GMT"),
+        path="/",
+    )
+    return {"ok": True, "user": {"email": user.email, "name": user.name, "picture": user.picture}}
+
+@app.post("/api/auth/logout")
+def auth_logout(response: Response, db: Session = Depends(get_db), session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME)):
+    if session_token:
+        try:
+            crud.delete_session(db, session_token)
+        except Exception:
+            pass
+    response.delete_cookie(key=SESSION_COOKIE_NAME, domain=COOKIE_DOMAIN, path="/")
+    return {"ok": True}
+
+@app.get("/api/auth/me")
+def auth_me(db: Session = Depends(get_db), session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME)):
+    if not session_token:
+        raise HTTPException(401, "Not signed in")
+    sess = crud.get_session(db, session_token)
+    if not sess:
+        raise HTTPException(401, "Session expired")
+    user = db.query(models.User).filter(models.User.id == sess.user_id).first()
+    if not user:
+        raise HTTPException(401, "User not found")
+    return {"email": user.email, "name": user.name, "picture": user.picture}
+
 @app.get("/api/professors", response_model=list[ProfessorOut])
 def list_professors(department: str | None = Query(None), db: Session = Depends(get_db)):
     profs = crud.list_professors(db, department)
@@ -431,7 +533,36 @@ def email_send(
     file_b64: str | None = Body(None, embed=True),
     user: dict = Depends(require_ucdavis_user),
 ):
-    attachment_bytes = base64.b64decode(file_b64) if file_b64 else None
+    # Validate basic fields
+    if not to or not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", to):
+        raise HTTPException(422, "Invalid recipient email")
+    if not subject or len(subject) > 200:
+        raise HTTPException(422, "Invalid subject")
+    if not body or len(body) > 20000:
+        raise HTTPException(422, "Invalid body content")
+
+    # Attachment limit 5MB
+    attachment_bytes = None
+    if file_b64:
+        approx_size = int(len(file_b64) * 0.75)
+        if approx_size > 5 * 1024 * 1024:
+            raise HTTPException(413, "Attachment too large (max 5MB)")
+        try:
+            attachment_bytes = base64.b64decode(file_b64)
+        except Exception:
+            raise HTTPException(422, "Invalid attachment encoding")
+
+    # Simple in-memory rate limit per user (10 emails / 10 minutes)
+    key = str(user.get("email") or user.get("sub") or "anon")
+    now = int(datetime.utcnow().timestamp())
+    window = 600
+    bucket = _EMAIL_SEND_EVENTS.get(key, [])
+    bucket = [t for t in bucket if (now - t) <= window]
+    if len(bucket) >= 10:
+        raise HTTPException(429, "Rate limit exceeded. Try later.")
+    bucket.append(now)
+    _EMAIL_SEND_EVENTS[key] = bucket
+
     send_email_with_attachment(
         to_email=to,
         subject=subject,

@@ -18,10 +18,8 @@ function App() {
   const { theme, ensureDepartments } = useApp()
   const redirectPath = typeof window !== 'undefined' ? window.location.pathname : '/'
   const { isSignedIn } = useAuth()
-  // Prefetch once on app start; departments are cached in context/localStorage
   useEffect(() => {
     ensureDepartments()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   return (
     <BrowserRouter>
