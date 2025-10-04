@@ -6,8 +6,7 @@ import { useEffect, useState } from 'react'
 import { matchProfessors } from '../lib/api'
 import ProfessorCard from '../components/ProfessorCard'
 import EmptyState from '../components/EmptyState'
-import LoadingSpinner from '../components/LoadingSpinner'
-import { ResultsSkeleton, ProfessorCardSkeleton } from '../components/SkeletonLoader'
+import { ResultsSkeleton } from '../components/SkeletonLoader'
 
 export default function Results() {
   const navigate = useNavigate()

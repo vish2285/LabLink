@@ -1,5 +1,3 @@
-import React from 'react'
-
 interface SkeletonLoaderProps {
   className?: string
   lines?: number
