@@ -43,6 +43,10 @@ export default function ProfileForm() {
     async function loadDepartments() {
       // Only load if we don't already have departments
       if (departments.length === 0) {
+        // Add a simple guard to prevent multiple simultaneous calls
+        if (window.__profileFormLoadingDepartments) return
+        window.__profileFormLoadingDepartments = true
+        
         try {
           setLoadingDepartments(true)
           const deps = await fetchDepartments()
@@ -64,18 +68,21 @@ export default function ProfileForm() {
           ])
         } finally {
           setLoadingDepartments(false)
+          window.__profileFormLoadingDepartments = false
         }
       } else {
         setLoadingDepartments(false)
       }
     }
     loadDepartments()
+  }, []) // Remove departments from dependency array to prevent infinite loop
 
-    // Align selected department to available list
-    if (profile?.department) {
+  // Separate useEffect for department alignment
+  useEffect(() => {
+    if (profile?.department && departments.length > 0) {
       setDepartment(departments.includes(profile.department) ? profile.department : '')
     }
-  }, [departments, profile?.department])
+  }, [profile?.department, departments])
 
   // Autosave draft to localStorage whenever fields change (no submit required)
   useEffect(() => {

@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useMemo, useState, useEffect } from 'react'
 import type { Professor, StudentProfile, MatchResult } from '../types'
 
+declare global {
+  interface Window {
+    __departmentsLoading?: boolean;
+    __profileFormLoadingDepartments?: boolean;
+  }
+}
+
 type AppState = {
   profile: StudentProfile | null
   results: MatchResult[]
@@ -89,6 +96,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const ensureDepartments = async (): Promise<void> => {
     try {
+      // Only fetch if we don't have departments or only have the default fallback
+      if (departments && departments.length > 0 && departments[0] !== 'Computer Science') return
+      
+      // Add a simple guard to prevent multiple simultaneous calls
+      if (window.__departmentsLoading) return
+      window.__departmentsLoading = true
+      
       const res = await fetch('/api/departments', { credentials: 'omit' })
       if (res.ok) {
         const deps = await res.json()
@@ -101,6 +115,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch {}
+    finally {
+      window.__departmentsLoading = false
+    }
   }
 
   useEffect(() => {

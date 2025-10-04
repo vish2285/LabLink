@@ -4,7 +4,7 @@ from typing import List, Optional
 from . import models
 import secrets, time
 
-def list_professors(db: Session, department_substr: Optional[str] = None) -> List[models.Professor]:
+def list_professors(db: Session, department_substr: Optional[str] = None, limit: Optional[int] = None, offset: Optional[int] = None) -> List[models.Professor]:
     q = db.query(models.Professor).options(
         joinedload(models.Professor.publications),
         joinedload(models.Professor.professor_skills).joinedload(models.ProfessorSkill.skill)
@@ -12,7 +12,21 @@ def list_professors(db: Session, department_substr: Optional[str] = None) -> Lis
     if department_substr:
         like = f"%{department_substr}%"
         q = q.filter(models.Professor.department.ilike(like))
+    
+    if offset:
+        q = q.offset(offset)
+    if limit:
+        q = q.limit(limit)
+    
     return q.all()
+
+def count_professors(db: Session, department_substr: Optional[str] = None) -> int:
+    """Count total professors matching the criteria"""
+    q = db.query(models.Professor)
+    if department_substr:
+        like = f"%{department_substr}%"
+        q = q.filter(models.Professor.department.ilike(like))
+    return q.count()
 
 def get_professor(db: Session, professor_id: int) -> Optional[models.Professor]:
     return (

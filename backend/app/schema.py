@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Dict, Any
+import re
 
 class PublicationOut(BaseModel):
     title: Optional[str] = None
@@ -25,6 +26,34 @@ class StudentProfileIn(BaseModel):
     interests: str = Field(..., description="e.g. 'computer vision, robustness, NLP'")
     skills: Optional[str] = Field("", description="e.g. 'python, pytorch, cuda'")
     availability: Optional[str] = ""
+    
+    @field_validator('interests')
+    @classmethod
+    def validate_interests(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Interests cannot be empty')
+        if len(v) > 2000:
+            raise ValueError('Interests too long (max 2000 characters)')
+        # Basic XSS protection
+        if re.search(r'<script|javascript:|on\w+\s*=', v, re.IGNORECASE):
+            raise ValueError('Invalid characters in interests')
+        return v.strip()
+    
+    @field_validator('skills')
+    @classmethod
+    def validate_skills(cls, v):
+        if v and len(v) > 1000:
+            raise ValueError('Skills too long (max 1000 characters)')
+        if v and re.search(r'<script|javascript:|on\w+\s*=', v, re.IGNORECASE):
+            raise ValueError('Invalid characters in skills')
+        return v.strip() if v else ""
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v):
+        if v and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', v):
+            raise ValueError('Invalid email format')
+        return v
 
 class MatchItem(BaseModel):
     score: float

@@ -7,8 +7,8 @@ class Professor(Base):
     __tablename__ = "professors"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255), index=True)
-    department: Mapped[str | None] = mapped_column(String(255))
-    email: Mapped[str | None] = mapped_column(String(255))
+    department: Mapped[str | None] = mapped_column(String(255), index=True)  # Add index for department filtering
+    email: Mapped[str | None] = mapped_column(String(255), index=True)  # Add index for email lookups
     research_interests: Mapped[str | None] = mapped_column(Text)
     profile_link: Mapped[str | None] = mapped_column(String(512))
     photo_url: Mapped[str | None] = mapped_column(String(512), default="")
@@ -28,7 +28,7 @@ class Publication(Base):
     professor_id: Mapped[int] = mapped_column(ForeignKey("professors.id", ondelete="CASCADE"), index=True)
     title: Mapped[str | None] = mapped_column(Text)
     abstract: Mapped[str | None] = mapped_column(Text)
-    year: Mapped[int | None] = mapped_column(Integer)
+    year: Mapped[int | None] = mapped_column(Integer, index=True)  # Add index for year filtering
     link: Mapped[str | None] = mapped_column(String(512))
 
     professor: Mapped["Professor"] = relationship(back_populates="publications")
