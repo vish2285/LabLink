@@ -45,7 +45,7 @@ export default function GoogleAuth({ onLogin }: Props) {
       } catch {}
 
       try {
-        // Post only the token; AuthContext will exchange it for a cookie
+        // Post token; AuthContext will store it and update state
         window.postMessage({ type: 'google-auth', idToken }, '*')
         if (onLogin) onLogin(payload, idToken)
       } catch {}

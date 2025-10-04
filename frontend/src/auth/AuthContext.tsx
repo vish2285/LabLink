@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { fetchMe, loginWithIdToken, logout as apiLogout } from '../lib/api'
 
 type AuthUser = {
   email: string
@@ -60,16 +59,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const payload = (e.data as any)
       if (payload?.type === 'google-auth' && payload?.idToken) {
         const token = String(payload.idToken)
-        // Exchange for HttpOnly session cookie; do NOT persist the token client-side
-        loginWithIdToken(token)
-          .then((resp) => {
-            const u: AuthUser | null = resp?.user ? { email: resp.user.email, name: resp.user.name, picture: resp.user.picture } : decodeIdToken(token)
-            if (u) {
-              try { window.localStorage.setItem(USER_KEY, JSON.stringify(u)) } catch {}
-              setUser(u)
-            }
-          })
-          .catch(() => {})
+        try { window.localStorage.setItem(TOKEN_KEY, token) } catch {}
+        setIdToken(token)
+        const u = decodeIdToken(token)
+        if (u) {
+          try { window.localStorage.setItem(USER_KEY, JSON.stringify(u)) } catch {}
+          setUser(u)
+        }
       }
     }
     window.addEventListener('message', handler)
@@ -131,13 +127,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => { if (timer) window.clearTimeout(timer) }
   }, [idToken])
 
-  // Hydrate from cookie session on mount
+  // Hydrate from stored token on mount
   useEffect(() => {
-    fetchMe().then((me) => {
-      const u: AuthUser = { email: me.email, name: me.name, picture: me.picture }
-      setUser(u)
-      try { window.localStorage.setItem(USER_KEY, JSON.stringify(u)) } catch {}
-    }).catch(() => {})
+    const t = (() => { try { return window.localStorage.getItem(TOKEN_KEY) } catch { return null } })()
+    if (t) {
+      setIdToken(t)
+      const u = decodeIdToken(t)
+      if (u) setUser(u)
+    }
   }, [])
 
   const value = useMemo<AuthContextValue>(() => ({
@@ -148,7 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try { window.localStorage.removeItem(TOKEN_KEY); window.localStorage.removeItem(USER_KEY) } catch {}
       setIdToken(null)
       setUser(null)
-      apiLogout().catch(() => {})
+      // No server logout needed for bearer-token auth
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const w = window as any

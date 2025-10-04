@@ -3,73 +3,43 @@ import type { Professor, StudentProfile, MatchResult } from '../types'
 // Normalize optional API base to avoid double slashes when joining paths
 const RAW_BASE = (import.meta as any).env?.VITE_API_BASE ? String((import.meta as any).env.VITE_API_BASE) : ''
 const API_BASE = RAW_BASE ? RAW_BASE.replace(/\/+$/, '') : ''
-// Use direct backend URL if no API_BASE is set
-const BASE_URL = API_BASE || 'http://127.0.0.1:8000'
 
 async function authorizedFetch(input: RequestInfo, init: RequestInit = {}) {
+  const token = (() => { try { return window.localStorage.getItem('google_id_token') } catch { return null } })()
   const headers: Record<string, string> = {
     ...(init.headers as Record<string, string> | undefined),
   }
+  if (token) headers['Authorization'] = `Bearer ${token}`
   // Normalize accidental double slashes in path
   let req: RequestInfo = input
   if (typeof input === 'string' && input.startsWith('//')) {
     req = input.replace(/^\/\/+/, '/')
   }
-  const res = await fetch(req, { ...init, headers, credentials: 'include' })
-  if (res.status === 401) {
-    const here = typeof window !== 'undefined' ? window.location.pathname : '/'
-    if (here !== '/sign-in') {
-      const params = new URLSearchParams({ from: here })
-      window.location.assign(`/sign-in?${params.toString()}`)
-    }
-  }
+  const res = await fetch(req, { ...init, headers })
   return res
 }
 
-// Auth helpers (cookie-based)
-export async function loginWithIdToken(idToken: string): Promise<{ ok: true; user: { email: string; name?: string; picture?: string } }> {
-  const res = await authorizedFetch(`${API_BASE}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id_token: idToken }),
-  })
-  if (!res.ok) throw new Error(await res.text().catch(() => 'Login failed'))
-  return res.json()
-}
-
-export async function logout(): Promise<{ ok: true }> {
-  const res = await authorizedFetch(`${API_BASE}/api/auth/logout`, { method: 'POST' })
-  if (!res.ok) throw new Error('Logout failed')
-  return res.json()
-}
-
-export async function fetchMe(): Promise<{ email: string; name?: string; picture?: string }> {
-  const res = await authorizedFetch(`${API_BASE}/api/auth/me`)
-  if (!res.ok) throw new Error('Not signed in')
-  return res.json()
-}
-
 export async function fetchProfessors(): Promise<Professor[]> {
-  const res = await authorizedFetch(`${BASE_URL}/api/professors`)
+  const res = await authorizedFetch(`${API_BASE}/api/professors`)
   if (!res.ok) throw new Error('Failed to load professors')
   return res.json()
 }
 
 export async function fetchDepartments(): Promise<string[]> {
-  const res = await fetch(`${BASE_URL}/api/departments`, { credentials: 'omit' })
+  const res = await fetch(`${API_BASE}/api/departments`, { credentials: 'omit' })
   if (!res.ok) throw new Error('Failed to load departments')
   return res.json()
 }
 
 export async function fetchProfessor(id: number): Promise<Professor> {
-  const res = await authorizedFetch(`${BASE_URL}/api/professors/${id}`)
+  const res = await authorizedFetch(`${API_BASE}/api/professors/${id}`)
   if (!res.ok) throw new Error('Failed to load professor')
   return res.json()
 }
 
 export async function matchProfessors(profile: StudentProfile, department?: string): Promise<MatchResult[]> {
   const query = department ? `?department=${encodeURIComponent(department)}` : ''
-  const res = await authorizedFetch(`${BASE_URL}/api/match${query}`, {
+  const res = await authorizedFetch(`${API_BASE}/api/match${query}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(profile),
@@ -97,7 +67,7 @@ export async function generateEmail(request: {
   paper_title?: string;
   topic?: string;
 }): Promise<{ subject: string; body: string }> {
-  const res = await authorizedFetch(`${BASE_URL}/api/email/generate`, {
+  const res = await authorizedFetch(`${API_BASE}/api/email/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
@@ -113,7 +83,7 @@ export async function sendEmail(payload: {
   filename?: string;
   file_b64?: string;
 }): Promise<{ ok: true }> {
-  const res = await authorizedFetch(`${BASE_URL}/api/email/send`, {
+  const res = await authorizedFetch(`${API_BASE}/api/email/send`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
