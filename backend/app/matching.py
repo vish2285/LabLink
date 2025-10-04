@@ -216,8 +216,14 @@ class SemanticIndex:
                 model_name = os.getenv("SEMANTIC_MODEL", "sentence-transformers/paraphrase-MiniLM-L3-v2")
                 self._model = SentenceTransformer(model_name)  # type: ignore
                 emb = self._model.encode(self.docs, normalize_embeddings=True, convert_to_numpy=True)  # type: ignore
-                # Ensure float32 and contiguous
-                self._emb = _np.ascontiguousarray(emb.astype("float32"))  # type: ignore
+                # Ensure float32, finite values, and re-normalize to avoid numeric issues
+                emb32 = emb.astype("float32")  # type: ignore
+                emb32 = _np.nan_to_num(emb32, nan=0.0, posinf=0.0, neginf=0.0)  # type: ignore
+                norms = _np.linalg.norm(emb32, axis=1, keepdims=True)  # type: ignore
+                safe_norms = _np.where(_np.isfinite(norms) & (norms > 1e-12), norms, 1.0)  # type: ignore
+                emb32 = emb32 / safe_norms  # type: ignore
+                # Ensure contiguous
+                self._emb = _np.ascontiguousarray(emb32)  # type: ignore
             except Exception:
                 # Disable on any runtime error
                 self.enabled = False
@@ -230,11 +236,18 @@ class SemanticIndex:
         try:
             qv = self._model.encode([norm_text(q)], normalize_embeddings=True, convert_to_numpy=True)  # type: ignore
             qv32 = qv.astype("float32")  # type: ignore
+            # Sanitize and re-normalize query vector
+            qv32 = _np.nan_to_num(qv32, nan=0.0, posinf=0.0, neginf=0.0)  # type: ignore
+            qn = _np.linalg.norm(qv32)  # type: ignore
+            if not _np.isfinite(qn) or qn <= 1e-12:  # type: ignore
+                qv32[:] = 0.0  # type: ignore
+            else:
+                qv32 = qv32 / qn  # type: ignore
             # Cosine similarity is dot product when vectors are L2-normalized
             sims = (qv32 @ self._emb.T)[0]  # type: ignore
             # Convert to native Python floats and clamp to [0,1]
             out = []
-            for x in sims.tolist():
+            for x in _np.nan_to_num(sims, nan=0.0, posinf=0.0, neginf=0.0).tolist():  # type: ignore
                 # cosine may be slightly outside bounds due to numeric error
                 y = max(0.0, min(1.0, float(x)))
                 out.append(y)
