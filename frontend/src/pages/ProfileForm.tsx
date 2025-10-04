@@ -3,11 +3,13 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Button from '../components/Button'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import { matchProfessors } from '../lib/api'
+import { matchProfessors, fetchDepartments } from '../lib/api'
+import LoadingSpinner from '../components/LoadingSpinner'
+import SkeletonLoader from '../components/SkeletonLoader'
 
 export default function ProfileForm() {
   const navigate = useNavigate()
-  const { setProfile, setResults, profile, departments } = useApp()
+  const { setProfile, setResults, profile, departments, setDepartments } = useApp()
   // --- Tag input state (interests & skills) ---
   const seedInterests = (profile?.interests || '')
     .split(',').map(s => s.trim()).filter(Boolean)
@@ -19,6 +21,7 @@ export default function ProfileForm() {
   const [skillInput, setSkillInput] = useState('')
   const [department, setDepartment] = useState(profile?.department || '')
   const [loading, setLoading] = useState(false)
+  const [loadingDepartments, setLoadingDepartments] = useState(!departments.length)
   const [error, setError] = useState<string | null>(null)
   const INTEREST_EXAMPLES = ['machine learning', 'natural language processing', 'computer vision', 'distributed systems']
   const SKILL_EXAMPLES = ['python', 'pytorch', 'sql', 'c++', 'c']
@@ -37,11 +40,49 @@ export default function ProfileForm() {
       }
     } catch {}
 
-    // Align selected department to available list
-    if (profile?.department) {
+    async function loadDepartments() {
+      // Only load if we don't already have departments
+      if (departments.length === 0) {
+        // Add a simple guard to prevent multiple simultaneous calls
+        if (window.__profileFormLoadingDepartments) return
+        window.__profileFormLoadingDepartments = true
+        
+        try {
+          setLoadingDepartments(true)
+          const deps = await fetchDepartments()
+          setDepartments(deps)
+        } catch (err) {
+          console.error('Failed to load departments:', err)
+          // Fallback to hardcoded departments if API fails
+          setDepartments([
+            'Computer Science',
+            'Electrical and Computer Engineering',
+            'Mechanical Engineering',
+            'Civil and Environmental Engineering',
+            'Biomedical Engineering',
+            'Mathematics',
+            'Statistics',
+            'Physics',
+            'Chemistry',
+            'Biology',
+          ])
+        } finally {
+          setLoadingDepartments(false)
+          window.__profileFormLoadingDepartments = false
+        }
+      } else {
+        setLoadingDepartments(false)
+      }
+    }
+    loadDepartments()
+  }, []) // Remove departments from dependency array to prevent infinite loop
+
+  // Separate useEffect for department alignment
+  useEffect(() => {
+    if (profile?.department && departments.length > 0) {
       setDepartment(departments.includes(profile.department) ? profile.department : '')
     }
-  }, [departments, profile?.department])
+  }, [profile?.department, departments])
 
   // Autosave draft to localStorage whenever fields change (no submit required)
   useEffect(() => {
@@ -97,23 +138,29 @@ export default function ProfileForm() {
   }
 
   return (
-    <div className="space-y-6" id="profile">
-      <div className="mx-auto w-full max-w-3xl rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6 shadow-sm text-center text-slate-900 dark:text-slate-100">
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Your Research Profile</h1>
+    <div className="space-y-6 px-4 sm:px-6 lg:px-8" id="profile">
+      <div className="mx-auto w-full max-w-3xl rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-4 sm:p-6 shadow-sm text-center text-slate-900 dark:text-slate-100">
+        <h1 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white">Your Research Profile</h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Add interests and skills to find matching UC Davis professors.</p>
-        <form onSubmit={onSubmit} className="mt-5 grid gap-5 justify-items-center">
+        <form onSubmit={onSubmit} className="mt-5 grid gap-4 sm:gap-5 justify-items-center">
           <div className="w-full max-w-md">
             <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Department</label>
-            <select
-              className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 px-3 py-2 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
-              value={department}
-              onChange={e => setDepartment(e.target.value)}
-            >
-              <option value="" disabled>{departments.length ? 'Select a department' : 'No departments available'}</option>
-              {departments.map(dep => (
-                <option key={dep} value={dep}>{dep}</option>
-              ))}
-            </select>
+            {loadingDepartments ? (
+              <div className="mt-1">
+                <SkeletonLoader lines={1} height="h-10" />
+              </div>
+            ) : (
+              <select
+                className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 px-3 py-2 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+                value={department}
+                onChange={e => setDepartment(e.target.value)}
+              >
+                <option value="" disabled>Select a department</option>
+                {departments.map(dep => (
+                  <option key={dep} value={dep}>{dep}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="w-full max-w-md">
             <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Interests</label>
@@ -216,10 +263,18 @@ export default function ProfileForm() {
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Press Enter to add. Click × to remove.</p>
             )}
           </div>
-          {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
+          {error && (
+            <div className="w-full max-w-md">
+              <p className="text-sm text-red-500 dark:text-red-400 text-center">{error}</p>
+            </div>
+          )}
           <div className="flex justify-center w-full">
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Matching…' : 'Find Matches'}
+            <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+              {loading ? (
+                <LoadingSpinner size="sm" text="Matching…" />
+              ) : (
+                'Find Matches'
+              )}
             </Button>
           </div>
         </form>

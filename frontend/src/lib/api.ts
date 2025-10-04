@@ -3,6 +3,8 @@ import type { Professor, StudentProfile, MatchResult } from '../types'
 // Normalize optional API base to avoid double slashes when joining paths
 const RAW_BASE = (import.meta as any).env?.VITE_API_BASE ? String((import.meta as any).env.VITE_API_BASE) : ''
 const API_BASE = RAW_BASE ? RAW_BASE.replace(/\/+$/, '') : ''
+// Use direct backend URL if no API_BASE is set
+const BASE_URL = API_BASE || 'http://127.0.0.1:8000'
 
 async function authorizedFetch(input: RequestInfo, init: RequestInit = {}) {
   const headers: Record<string, string> = {
@@ -48,26 +50,26 @@ export async function fetchMe(): Promise<{ email: string; name?: string; picture
 }
 
 export async function fetchProfessors(): Promise<Professor[]> {
-  const res = await authorizedFetch(`${API_BASE}/api/professors`)
+  const res = await authorizedFetch(`${BASE_URL}/api/professors`)
   if (!res.ok) throw new Error('Failed to load professors')
   return res.json()
 }
 
 export async function fetchDepartments(): Promise<string[]> {
-  const res = await fetch(`${API_BASE}/api/departments`, { credentials: 'omit' })
+  const res = await fetch(`${BASE_URL}/api/departments`, { credentials: 'omit' })
   if (!res.ok) throw new Error('Failed to load departments')
   return res.json()
 }
 
 export async function fetchProfessor(id: number): Promise<Professor> {
-  const res = await authorizedFetch(`${API_BASE}/api/professors/${id}`)
+  const res = await authorizedFetch(`${BASE_URL}/api/professors/${id}`)
   if (!res.ok) throw new Error('Failed to load professor')
   return res.json()
 }
 
 export async function matchProfessors(profile: StudentProfile, department?: string): Promise<MatchResult[]> {
   const query = department ? `?department=${encodeURIComponent(department)}` : ''
-  const res = await authorizedFetch(`${API_BASE}/api/match${query}`, {
+  const res = await authorizedFetch(`${BASE_URL}/api/match${query}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(profile),
@@ -95,7 +97,7 @@ export async function generateEmail(request: {
   paper_title?: string;
   topic?: string;
 }): Promise<{ subject: string; body: string }> {
-  const res = await authorizedFetch(`${API_BASE}/api/email/generate`, {
+  const res = await authorizedFetch(`${BASE_URL}/api/email/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
@@ -111,7 +113,7 @@ export async function sendEmail(payload: {
   filename?: string;
   file_b64?: string;
 }): Promise<{ ok: true }> {
-  const res = await authorizedFetch(`${API_BASE}/api/email/send`, {
+  const res = await authorizedFetch(`${BASE_URL}/api/email/send`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
