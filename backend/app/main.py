@@ -32,7 +32,7 @@ import httpx
 import base64
 from urllib.parse import urljoin
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Any
 
 # Load environment from .env (for SMTP, etc.)
 load_dotenv()
@@ -450,6 +450,7 @@ def match_professors(
     w_interests: float = Query(0.55, ge=0.0, le=1.0),
     w_skills: float = Query(0.35, ge=0.0, le=1.0),
     w_pubs: float = Query(0.10, ge=0.0, le=1.0),
+    suggest_when_empty: bool = Query(False),
     db: Session = Depends(get_db),
     user: dict = Depends(require_ucdavis_user),
 ):
@@ -496,6 +497,9 @@ def match_professors(
             sim_interests = clamp01(0.40 * lex + 0.60 * sem)
         else:
             sim_interests = clamp01(lex)
+        # Suppress noise when both signals are negligible (gibberish queries)
+        if (lex < 0.02) and (sem < 0.25):
+            sim_interests = 0.0
 
         prof_skills = [ps.skill.name for ps in p.professor_skills]
         jac, skill_hits = jaccard(student_skills, prof_skills)
@@ -540,7 +544,9 @@ def match_professors(
     scored.sort(reverse=True, key=lambda x: (x[0], x[1], x[2]))
 
     # Preliminary selection before optional reranking
-    prelim = scored[: (top_k or 100)] if scored else []
+    # Gate by positive baseline so reranker cannot introduce matches from pure noise
+    prelim = [t for t in scored if t[0] > 0.0]
+    prelim = prelim[: (top_k or 100)] if prelim else []
 
     # Optional cross-encoder rerank of prelim set using concatenated doc text
     if RERANKER is not None and getattr(RERANKER, 'available', False) and prelim:
@@ -566,6 +572,32 @@ def match_professors(
         selected = prelim[:top_k]
     else:
         selected = [t for t in prelim if t[0] > 0.0]
+
+    # Fallback suggestions when nothing meaningful matches
+    if not selected and suggest_when_empty:
+        suggestions: list[tuple[float, int, int, Any, dict]] = []
+        student_skills = extract_skills(profile.skills or "")
+        for p in profs:
+            prof_skills = [ps.skill.name for ps in p.professor_skills]
+            # Skill-based suggestion if user provided skills
+            if student_skills:
+                jac, skill_hits = jaccard(student_skills, prof_skills)
+                A, B = set(student_skills), set(prof_skills)
+                inter = len(A & B)
+                prec = inter / len(B) if B else 0.0
+                rec = inter / len(A) if A else 0.0
+                f1 = (2 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
+                s = clamp01(f1 * 0.8 + jac * 0.2)
+                why = {"interests_hits": [], "skills_hits": skill_hits[:6], "pubs_hits": []}
+            else:
+                # Otherwise suggest by general coverage of interests text length
+                tokens = tokenize(p.research_interests or "")
+                s = clamp01(min(len(tokens) / 50.0, 1.0))
+                why = {"interests_hits": [], "skills_hits": [], "pubs_hits": []}
+            suggestions.append((s, len(prof_skills), -p.id, p, why))
+        suggestions.sort(reverse=True, key=lambda x: (x[0], x[1], x[2]))
+        cap = top_k or 10
+        selected = suggestions[:cap]
 
     matches = []
     for final, _, __, p, why in selected:
