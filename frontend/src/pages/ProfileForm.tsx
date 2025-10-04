@@ -9,7 +9,7 @@ import SkeletonLoader from '../components/SkeletonLoader'
 
 export default function ProfileForm() {
   const navigate = useNavigate()
-  const { setProfile, setResults, profile, departments } = useApp()
+  const { setProfile, setResults, profile, departments, setDepartments } = useApp()
   // --- Tag input state (interests & skills) ---
   const seedInterests = (profile?.interests || '')
     .split(',').map(s => s.trim()).filter(Boolean)
@@ -21,7 +21,7 @@ export default function ProfileForm() {
   const [skillInput, setSkillInput] = useState('')
   const [department, setDepartment] = useState(profile?.department || '')
   const [loading, setLoading] = useState(false)
-  const [loadingDepartments, setLoadingDepartments] = useState(true)
+  const [loadingDepartments, setLoadingDepartments] = useState(!departments.length)
   const [error, setError] = useState<string | null>(null)
   const INTEREST_EXAMPLES = ['machine learning', 'natural language processing', 'computer vision', 'distributed systems']
   const SKILL_EXAMPLES = ['python', 'pytorch', 'sql', 'c++', 'c']
@@ -41,31 +41,41 @@ export default function ProfileForm() {
     } catch {}
 
     async function loadDepartments() {
-      try {
-        setLoadingDepartments(true)
-        const deps = await fetchDepartments()
-        setDepartments(deps)
-      } catch (err) {
-        console.error('Failed to load departments:', err)
-        // Fallback to hardcoded departments if API fails
-        setDepartments([
-          'Computer Science',
-          'Electrical and Computer Engineering',
-          'Mechanical Engineering',
-          'Civil and Environmental Engineering',
-          'Biomedical Engineering',
-          'Mathematics',
-          'Statistics',
-          'Physics',
-          'Chemistry',
-          'Biology',
-        ])
-      } finally {
+      // Only load if we don't already have departments
+      if (departments.length === 0) {
+        try {
+          setLoadingDepartments(true)
+          const deps = await fetchDepartments()
+          setDepartments(deps)
+        } catch (err) {
+          console.error('Failed to load departments:', err)
+          // Fallback to hardcoded departments if API fails
+          setDepartments([
+            'Computer Science',
+            'Electrical and Computer Engineering',
+            'Mechanical Engineering',
+            'Civil and Environmental Engineering',
+            'Biomedical Engineering',
+            'Mathematics',
+            'Statistics',
+            'Physics',
+            'Chemistry',
+            'Biology',
+          ])
+        } finally {
+          setLoadingDepartments(false)
+        }
+      } else {
         setLoadingDepartments(false)
       }
     }
     loadDepartments()
-  }, [])
+
+    // Align selected department to available list
+    if (profile?.department) {
+      setDepartment(departments.includes(profile.department) ? profile.department : '')
+    }
+  }, [departments, profile?.department])
 
   // Autosave draft to localStorage whenever fields change (no submit required)
   useEffect(() => {

@@ -20,6 +20,7 @@ type AppActions = {
   toggleTheme: () => void
   setTheme: (t: 'light' | 'dark') => void
   ensureDepartments: () => Promise<void>
+  setDepartments: (departments: string[]) => void
 }
 
 type AppContextValue = AppState & AppActions
@@ -146,6 +147,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       toggleTheme: () => setTheme(t => (t === 'dark' ? 'light' : 'dark')),
       setTheme,
       ensureDepartments,
+      setDepartments,
     }),
     [profile, results, selectedProfessor, emailDraft, emailSubject, theme, departments]
   )
