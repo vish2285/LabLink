@@ -2,7 +2,7 @@ import type { Professor, StudentProfile, MatchResult } from '../types'
 
 // Normalize optional API base to avoid double slashes when joining paths
 const RAW_BASE = (import.meta as any).env?.VITE_API_BASE ? String((import.meta as any).env.VITE_API_BASE) : ''
-const API_BASE = RAW_BASE ? RAW_BASE.replace(/\/+$/, '') : ''
+export const API_BASE = RAW_BASE ? RAW_BASE.replace(/\/+$/, '') : ''
 
 async function authorizedFetch(input: RequestInfo, init: RequestInit = {}) {
   const token = (() => { try { return window.localStorage.getItem('google_id_token') } catch { return null } })()
@@ -15,7 +15,7 @@ async function authorizedFetch(input: RequestInfo, init: RequestInit = {}) {
   if (typeof input === 'string' && input.startsWith('//')) {
     req = input.replace(/^\/\/+/, '/')
   }
-  const res = await fetch(req, { ...init, headers })
+  const res = await fetch(req, { ...init, headers, credentials: 'include' })
   return res
 }
 

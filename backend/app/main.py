@@ -77,8 +77,16 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in ALLOWED_ORIGINS if o.strip()],
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "X-Requested-With"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=[
+        "Content-Type",
+        "X-Requested-With",
+        "Authorization",
+        "Accept",
+        "Accept-Language",
+        "Cache-Control",
+        "Pragma",
+    ],
 )
 """
 Google Identity Services auth: verify Google ID token (Authorization: Bearer <id_token>)
@@ -343,6 +351,13 @@ async def add_security_headers(request: Request, call_next):
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
         resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         resp.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+        # Disallow embedding API responses in iframes to mitigate clickjacking
+        resp.headers.setdefault("X-Frame-Options", "DENY")
+        # Conservative CSP for API responses
+        resp.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
+        )
         if str(os.getenv("HSTS_ENABLED", "1")).lower() in {"1", "true", "yes"}:
             resp.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
     except Exception:
@@ -394,16 +409,9 @@ def auth_logout(response: Response, db: Session = Depends(get_db), session_token
     return {"ok": True}
 
 @app.get("/api/auth/me")
-def auth_me(db: Session = Depends(get_db), session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME)):
-    if not session_token:
-        raise HTTPException(401, "Not signed in")
-    sess = crud.get_session(db, session_token)
-    if not sess:
-        raise HTTPException(401, "Session expired")
-    user = db.query(models.User).filter(models.User.id == sess.user_id).first()
-    if not user:
-        raise HTTPException(401, "User not found")
-    return {"email": user.email, "name": user.name, "picture": user.picture}
+def auth_me(user: dict = Depends(get_current_user)):
+    # Accept either cookie session or Bearer token (handled in get_current_user)
+    return {"email": user.get("email"), "name": user.get("name"), "picture": user.get("picture")}
 
 @app.get("/api/professors", response_model=list[ProfessorOut])
 def list_professors(department: str | None = Query(None), db: Session = Depends(get_db)):
@@ -609,8 +617,29 @@ def email_send(
 
 # ---- Photo scraping (best-effort, lightweight) ----
 @app.get("/api/scrape_photo")
-def scrape_photo(url: str):
+def scrape_photo(url: str, user: dict = Depends(require_ucdavis_user)):
     try:
+        # Allow only http(s) and restrict to a safe allowlist of domains
+        if not isinstance(url, str) or not re.match(r"^https?://", url, re.IGNORECASE):
+            return {"photo_url": ""}
+        allowed_hosts = {"ucdavis.edu", "cs.ucdavis.edu", "ucdavis.github.io"}
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        host = (parsed.hostname or "").lower()
+        if not host or not any(host == d or host.endswith("." + d) for d in allowed_hosts):
+            return {"photo_url": ""}
+
+        # lightweight rate limit per user/email for this endpoint (5/min)
+        key = f"scrape:{str(user.get('email') or user.get('sub') or 'anon')}"
+        now = int(datetime.utcnow().timestamp())
+        window = 60
+        bucket = _EMAIL_SEND_EVENTS.get(key, [])
+        bucket = [t for t in bucket if (now - t) <= window]
+        if len(bucket) >= 5:
+            raise HTTPException(429, "Rate limit exceeded. Try later.")
+        bucket.append(now)
+        _EMAIL_SEND_EVENTS[key] = bucket
+
         resp = httpx.get(url, timeout=8.0, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
         })

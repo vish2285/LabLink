@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { API_BASE } from '../lib/api'
 
 type AuthUser = {
   email: string
@@ -41,9 +42,7 @@ function decodeIdToken(token: string): AuthUser | null {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [idToken, setIdToken] = useState<string | null>(() => {
-    try { return window.localStorage.getItem(TOKEN_KEY) } catch { return null }
-  })
+  const [idToken, setIdToken] = useState<string | null>(null)
   const [user, setUser] = useState<AuthUser | null>(() => {
     try {
       const raw = window.localStorage.getItem(USER_KEY)
@@ -54,12 +53,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Handle Google One Tap or standard button callbacks writing token to storage
-    const handler = (e: MessageEvent) => {
+    const handler = async (e: MessageEvent) => {
       if (!e?.data || typeof e.data !== 'object') return
       const payload = (e.data as any)
       if (payload?.type === 'google-auth' && payload?.idToken) {
         const token = String(payload.idToken)
-        try { window.localStorage.setItem(TOKEN_KEY, token) } catch {}
+        try {
+          // Perform server-side login to set secure HttpOnly session cookie
+          const resp = await fetch(`${API_BASE}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ id_token: token }),
+          })
+          if (resp.ok) {
+            const data = await resp.json().catch(() => null)
+            if (data?.user) {
+              setUser({ email: data.user.email, name: data.user.name, picture: data.user.picture })
+              try { window.localStorage.setItem(USER_KEY, JSON.stringify(data.user)) } catch {}
+            }
+            // Clear any legacy token persisted locally
+            try { window.localStorage.removeItem(TOKEN_KEY) } catch {}
+            setIdToken(null)
+            return
+          }
+        } catch {}
+        // Fallback: set local user from token if server login fails (dev)
         setIdToken(token)
         const u = decodeIdToken(token)
         if (u) {
@@ -127,25 +146,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => { if (timer) window.clearTimeout(timer) }
   }, [idToken])
 
-  // Hydrate from stored token on mount
+  // Hydrate session from cookie on mount
   useEffect(() => {
-    const t = (() => { try { return window.localStorage.getItem(TOKEN_KEY) } catch { return null } })()
-    if (t) {
-      setIdToken(t)
-      const u = decodeIdToken(t)
-      if (u) setUser(u)
-    }
+    (async () => {
+      try {
+        const resp = await fetch(`${API_BASE}/api/auth/me`, { credentials: 'include' })
+        if (resp.ok) {
+          const u = await resp.json()
+          if (u?.email) {
+            setUser({ email: u.email, name: u.name, picture: u.picture })
+            try { window.localStorage.setItem(USER_KEY, JSON.stringify(u)) } catch {}
+          }
+        }
+      } catch {}
+    })()
   }, [])
 
   const value = useMemo<AuthContextValue>(() => ({
     isSignedIn: Boolean(user || idToken),
     idToken,
     user,
-    signOut: () => {
+    signOut: async () => {
       try { window.localStorage.removeItem(TOKEN_KEY); window.localStorage.removeItem(USER_KEY) } catch {}
       setIdToken(null)
       setUser(null)
-      // No server logout needed for bearer-token auth
+      try { await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' }) } catch {}
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const w = window as any

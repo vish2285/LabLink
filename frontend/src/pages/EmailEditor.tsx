@@ -4,7 +4,7 @@ import { FiMail, FiPaperclip, FiExternalLink, FiArrowLeft } from 'react-icons/fi
 import Button from '../components/Button'
 import { useState as useReactState } from 'react'
 import { useApp } from '../context/AppContext'
-import { generateEmail } from '../lib/api'
+import { generateEmail, sendEmail } from '../lib/api'
 import { useAuth } from '../auth/AuthContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 
@@ -129,16 +129,7 @@ export default function EmailEditor() {
                   file_b64 = btoa(String.fromCharCode(...new Uint8Array(arr)))
                   filename = file.name
                 }
-                const resp = await fetch('/api/email/send', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'include',
-                  body: JSON.stringify({ to, subject: subjectText, body, filename, file_b64 }),
-                })
-                if (!resp.ok) {
-                  const txt = await resp.text().catch(() => '')
-                  throw new Error(txt || 'Failed to send email')
-                }
+                await sendEmail({ to, subject: subjectText, body, filename, file_b64 })
                 try {
                   const el = document.createElement('div')
                   el.className = 'fixed top-4 right-4 z-50 rounded-md bg-emerald-600 text-white px-4 py-2 shadow-lg smooth'

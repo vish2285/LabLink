@@ -1,5 +1,8 @@
 # 🚀 Redis caching for similarity calculations and expensive operations
-import redis
+try:
+    import redis  # type: ignore
+except Exception:  # pragma: no cover
+    redis = None  # type: ignore
 import json
 import hashlib
 from typing import Any, Optional
@@ -10,6 +13,8 @@ class CacheManager:
         # Try to connect to Redis, fallback to in-memory cache if unavailable
         try:
             redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+            if redis is None:
+                raise RuntimeError("redis library not installed")
             self.redis_client = redis.from_url(redis_url, decode_responses=True)
             self.redis_client.ping()  # Test connection
             self.redis_available = True

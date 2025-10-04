@@ -1,5 +1,6 @@
-# Database
+# Databases
 professors.db
+backend/professors.db
 *.db
 *.sqlite
 *.sqlite3
@@ -8,9 +9,18 @@ professors.db
 .env
 .env.local
 .env.development
-.env.production# Local databases and env files
-professors.db
-backend/professors.db
-.env
+.env.production
 **/.env
 *.env
+
+# Node/Frontend
+node_modules/
+frontend/dist/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Logs
+*.log
+logs/

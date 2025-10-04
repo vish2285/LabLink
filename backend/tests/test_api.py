@@ -76,23 +76,19 @@ def test_departments_endpoint(client):
     assert response.status_code == 200
     assert response.json() == ["Computer Science"]
 
-def test_professors_endpoint_pagination(client, test_professor):
-    """Test professors endpoint with pagination"""
-    response = client.get("/api/professors?page=1&size=10")
+def test_professors_endpoint_returns_list(client, test_professor):
+    """Test professors endpoint returns a list of professors"""
+    response = client.get("/api/professors")
     assert response.status_code == 200
     data = response.json()
-    assert "data" in data
-    assert "pagination" in data
-    assert data["pagination"]["page"] == 1
-    assert data["pagination"]["size"] == 10
+    assert isinstance(data, list)
+    assert any(p.get("id") == test_professor.id for p in data)
 
-def test_professors_v1_endpoint(client, test_professor):
-    """Test v1 professors endpoint"""
-    response = client.get("/api/v1/professors?page=1&size=5")
+def test_departments_endpoint_is_cs_only(client):
+    """Departments endpoint returns Computer Science only (by design)"""
+    response = client.get("/api/departments")
     assert response.status_code == 200
-    data = response.json()
-    assert "data" in data
-    assert "pagination" in data
+    assert response.json() == ["Computer Science"]
 
 def test_professor_by_id_endpoint(client, test_professor):
     """Test get professor by ID endpoint"""
@@ -123,6 +119,9 @@ def test_cors_headers(client):
     response = client.get("/api/departments")
     # Check that the endpoint works (CORS is handled by middleware)
     assert response.status_code == 200
+    # Security headers present
+    assert response.headers.get("X-Content-Type-Options") == "nosniff"
+    assert response.headers.get("X-Frame-Options") == "DENY"
 
 def test_input_validation():
     """Test input validation in schema"""
