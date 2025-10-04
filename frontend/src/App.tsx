@@ -10,13 +10,15 @@ import About from './pages/About.tsx'
 import Feedback from './pages/Feedback.tsx'
 import Privacy from './pages/Privacy.tsx'
 import { useApp } from './context/AppContext'
+import { useEffect } from 'react'
 import { useAuth } from './auth/AuthContext'
 import SignIn from './pages/SignIn'
 
 function App() {
-  const { theme } = useApp()
+  const { theme, ensureDepartments } = useApp()
   const redirectPath = typeof window !== 'undefined' ? window.location.pathname : '/'
   const { isSignedIn } = useAuth()
+  useEffect(() => { ensureDepartments() }, [ensureDepartments])
   return (
     <BrowserRouter>
       <div className={`min-h-screen flex flex-col ${theme === 'dark' ? 'text-slate-100 bg-gradient-to-b from-[#0b1220] via-[#0a0f1a] to-[#05080f]' : 'text-slate-900 bg-white'}`}>

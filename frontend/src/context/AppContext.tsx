@@ -8,6 +8,7 @@ type AppState = {
   emailDraft: string
   emailSubject: string
   theme: 'light' | 'dark'
+  departments: string[]
 }
 
 type AppActions = {
@@ -18,6 +19,7 @@ type AppActions = {
   setEmailSubject: (subj: string) => void
   toggleTheme: () => void
   setTheme: (t: 'light' | 'dark') => void
+  ensureDepartments: () => Promise<void>
 }
 
 type AppContextValue = AppState & AppActions
@@ -25,6 +27,10 @@ type AppContextValue = AppState & AppActions
 const AppContext = createContext<AppContextValue | undefined>(undefined)
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const DEPTS_LS = 'departments_cache'
+  const DEPTS_TS_LS = 'departments_cache_ts'
+  const DEPTS_TTL_MS = 24 * 60 * 60 * 1000
+
   const [profile, setProfile] = useState<StudentProfile | null>(() => {
     try {
       if (typeof window === 'undefined') return null
@@ -66,6 +72,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return 'light'
   })
 
+  // Departments cached in-memory and persisted with TTL
+  const [departments, setDepartments] = useState<string[]>(() => {
+    try {
+      if (typeof window === 'undefined') return ['Computer Science']
+      const raw = window.localStorage.getItem(DEPTS_LS)
+      const ts = Number(window.localStorage.getItem(DEPTS_TS_LS) || 0)
+      if (raw && (Date.now() - ts) < DEPTS_TTL_MS) {
+        const deps = JSON.parse(raw) as string[]
+        if (Array.isArray(deps) && deps.length) return deps
+      }
+    } catch {}
+    return ['Computer Science']
+  })
+
+  const ensureDepartments = async (): Promise<void> => {
+    try {
+      if (departments && departments.length > 0 && departments[0] !== 'Computer Science') return
+      const res = await fetch('/api/departments', { credentials: 'omit' })
+      if (res.ok) {
+        const deps = await res.json()
+        if (Array.isArray(deps) && deps.length) {
+          setDepartments(deps)
+          try {
+            window.localStorage.setItem(DEPTS_LS, JSON.stringify(deps))
+            window.localStorage.setItem(DEPTS_TS_LS, String(Date.now()))
+          } catch {}
+        }
+      }
+    } catch {}
+  }
+
   useEffect(() => {
     const root = document.documentElement
     if (theme === 'dark') root.classList.add('dark')
@@ -101,6 +138,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       emailDraft,
       emailSubject,
       theme,
+      departments,
       setProfile,
       setResults,
       selectProfessor: setSelectedProfessor,
@@ -108,8 +146,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setEmailSubject,
       toggleTheme: () => setTheme(t => (t === 'dark' ? 'light' : 'dark')),
       setTheme,
+      ensureDepartments,
     }),
-    [profile, results, selectedProfessor, emailDraft, emailSubject, theme]
+    [profile, results, selectedProfessor, emailDraft, emailSubject, theme, departments]
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

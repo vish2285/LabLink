@@ -3,11 +3,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Button from '../components/Button'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import { matchProfessors, fetchDepartments } from '../lib/api'
+import { matchProfessors } from '../lib/api'
 
 export default function ProfileForm() {
   const navigate = useNavigate()
-  const { setProfile, setResults, profile } = useApp()
+  const { setProfile, setResults, profile, departments } = useApp()
   // --- Tag input state (interests & skills) ---
   const seedInterests = (profile?.interests || '')
     .split(',').map(s => s.trim()).filter(Boolean)
@@ -18,7 +18,6 @@ export default function ProfileForm() {
   const [interestInput, setInterestInput] = useState('')
   const [skillInput, setSkillInput] = useState('')
   const [department, setDepartment] = useState(profile?.department || '')
-  const [departments, setDepartments] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const INTEREST_EXAMPLES = ['machine learning', 'natural language processing', 'computer vision', 'distributed systems']
@@ -38,29 +37,11 @@ export default function ProfileForm() {
       }
     } catch {}
 
-    async function loadDepartments() {
-      try {
-        const deps = await fetchDepartments()
-        setDepartments(deps)
-      } catch (err) {
-        console.error('Failed to load departments:', err)
-        // Fallback to hardcoded departments if API fails
-        setDepartments([
-          'Computer Science',
-          'Electrical and Computer Engineering',
-          'Mechanical Engineering',
-          'Civil and Environmental Engineering',
-          'Biomedical Engineering',
-          'Mathematics',
-          'Statistics',
-          'Physics',
-          'Chemistry',
-          'Biology',
-        ])
-      }
+    // Align selected department to available list
+    if (profile?.department) {
+      setDepartment(departments.includes(profile.department) ? profile.department : '')
     }
-    loadDepartments()
-  }, [])
+  }, [departments, profile?.department])
 
   // Autosave draft to localStorage whenever fields change (no submit required)
   useEffect(() => {
