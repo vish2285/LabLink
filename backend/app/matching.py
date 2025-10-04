@@ -15,32 +15,19 @@ except Exception:
 try:
     # sentence-transformers pulls in torch; if unavailable at runtime, we fallback
     from sentence_transformers import SentenceTransformer  # type: ignore
+    from sentence_transformers import CrossEncoder  # type: ignore
     import numpy as _np  # type: ignore
     SEM_OK = True
 except Exception:
     SentenceTransformer = None  # type: ignore
+    CrossEncoder = None  # type: ignore
     _np = None  # type: ignore
     SEM_OK = False
 
 _WS = re.compile(r"\s+")
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
 
-SKILL_ALIASES = {
-    "torch": "pytorch", "pytorch": "pytorch",
-    "tf": "tensorflow", "tensorflow": "tensorflow",
-    "opencv": "opencv",
-    "cuda": "cuda", "nvidia-cuda": "cuda",
-    "cpp": "c++", "c sharp": "c#", "postgres": "postgresql",
-    "hpc": "high-performance computing",
-    "pl": "programming languages",
-    "ml": "machine learning",
-    "dl": "deep learning",
-    "nlp": "natural language processing",
-    "cv": "computer vision",
-    "rl": "reinforcement learning",
-    "llm": "large language model",
-    "llms": "large language models",
-}
+from .skill_aliases import SKILL_ALIASES
 
 # Light synonym/alias expansion for interest phrases (used for query expansion only)
 # Keep compact and conservative to avoid noisy expansions
@@ -58,6 +45,15 @@ INTEREST_ALIASES: Dict[str, List[str]] = {
     "large language models": ["llms", "foundation models"],
     "gnn": ["graph neural networks", "graph learning"],
     "graph neural networks": ["gnn", "graph representation learning"],
+    "vision transformer": ["vit", "transformer vision", "image transformer", "vit"],
+    "retrieval augmented generation": ["rag", "retrieval-augmented generation"],
+    "self-supervised learning": ["ssl", "contrastive learning"],
+    "causal inference": ["causality", "causal discovery"],
+    "bayesian inference": ["probabilistic modeling", "bayesian modeling"],
+    "robotics": ["autonomous systems", "robot learning"],
+    "graph representation learning": ["gnn", "graph neural networks"],
+    "time series": ["temporal modeling", "sequence forecasting"],
+    "optimization": ["stochastic optimization", "convex optimization"],
 }
 
 def norm_text(s: str) -> str:
@@ -245,6 +241,44 @@ class SemanticIndex:
             return out
         except Exception:
             return [0.0 for _ in self.docs]
+
+
+class CrossEncoderReranker:
+    """Optional cross-encoder reranker for top-K pairs. Safe fallback if deps missing.
+
+    Enabled only when sentence-transformers is available AND env SEMANTIC_RERANK_ENABLED is truthy.
+    """
+
+    def __init__(self, model_name: str | None = None):
+        self.available = False
+        self.model = None
+        try:
+            enabled = str(os.getenv("SEMANTIC_RERANK_ENABLED", "0")).lower() in {"1", "true", "yes"}
+            if not enabled or CrossEncoder is None:
+                return
+            name = model_name or os.getenv("SEMANTIC_RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
+            self.model = CrossEncoder(name)  # type: ignore
+            self.available = True
+        except Exception:
+            self.model = None
+            self.available = False
+
+    def score(self, query: str, docs: list[str]) -> list[float]:
+        if not self.available or not self.model or not docs:
+            return [0.0 for _ in docs]
+        try:
+            pairs = [(query, d) for d in docs]
+            scores = self.model.predict(pairs)  # type: ignore
+            # Normalize to [0,1]
+            if hasattr(scores, "tolist"):
+                scores = scores.tolist()
+            vals = [float(x) for x in scores]
+            # Min-max normalize defensively
+            mn, mx = (min(vals), max(vals)) if vals else (0.0, 1.0)
+            rng = (mx - mn) if (mx - mn) > 1e-9 else 1.0
+            return [max(0.0, min(1.0, (v - mn) / rng)) for v in vals]
+        except Exception:
+            return [0.0 for _ in docs]
 
 def pubs_score(interests_tokens: List[str], pubs: List[Dict[str, Any]]) -> Tuple[float, List[str], float]:
     if not pubs or not interests_tokens: return 0.0, [], 1.0

@@ -26,6 +26,7 @@ from .matching import (
     prof_to_doc, VectorStore, extract_skills, jaccard, pubs_score, tokenize, norm_text,
     expand_query_text, SemanticIndex
 )
+from .matching import CrossEncoderReranker
 from .email_utils import build_email, send_email_with_attachment
 import httpx
 import base64
@@ -175,6 +176,7 @@ Base.metadata.create_all(bind=engine)
 # ---- Vector stores (rebuilt on reload) ----
 VECSTORE: VectorStore | None = None
 SEM_INDEX: SemanticIndex | None = None
+RERANKER: CrossEncoderReranker | None = None
 DOCS: list[str] = []
 PROF_IDS: list[int] = []
 # Map professor id -> personal_site loaded from JSON (since not stored in DB)
@@ -225,6 +227,11 @@ def rebuild_vectorstore(db: Session):
     DOCS = [prof_to_doc(x) for x in payloads]
     VECSTORE = VectorStore(DOCS)
     SEM_INDEX = SemanticIndex(DOCS)
+    global RERANKER
+    try:
+        RERANKER = CrossEncoderReranker()
+    except Exception:
+        RERANKER = None
 
 def load_personal_sites_from_json():
     global PERSONAL_SITE_MAP
@@ -485,7 +492,8 @@ def match_professors(
         lex = id_to_lex.get(p.id, 0.0)
         sem = id_to_sem.get(p.id, 0.0)
         if sem > 0.0:
-            sim_interests = clamp01(0.6 * lex + 0.4 * sem)
+            # Favor semantic more heavily for maximum paraphrase robustness
+            sim_interests = clamp01(0.40 * lex + 0.60 * sem)
         else:
             sim_interests = clamp01(lex)
 
@@ -531,11 +539,33 @@ def match_professors(
 
     scored.sort(reverse=True, key=lambda x: (x[0], x[1], x[2]))
 
-    # If caller passed top_k, honor it; otherwise return all meaningful matches
+    # Preliminary selection before optional reranking
+    prelim = scored[: (top_k or 100)] if scored else []
+
+    # Optional cross-encoder rerank of prelim set using concatenated doc text
+    if RERANKER is not None and getattr(RERANKER, 'available', False) and prelim:
+        doc_texts = []
+        for _, __, ___, p, ____ in prelim:
+            # Build a more descriptive doc for reranking
+            parts = [p.research_interests or ""]
+            pubs_list = extract_publications(p)
+            for d in pubs_list:
+                parts += [(d.get("title") or ""), (d.get("abstract") or "")]
+            doc_texts.append(norm_text(" ".join(parts)))
+        ce_scores = RERANKER.score(query_text, doc_texts)
+        # Blend CE score with existing final to produce rerank
+        blended = []
+        for (final, hits, neg_id, p, why), ce in zip(prelim, ce_scores):
+            rerank = clamp01(0.5 * final + 0.5 * ce)
+            blended.append((rerank, hits, neg_id, p, why))
+        blended.sort(reverse=True, key=lambda x: (x[0], x[1], x[2]))
+        prelim = blended
+
+    # Final selection honoring top_k if provided
     if top_k is not None:
-        selected = scored[:top_k]
+        selected = prelim[:top_k]
     else:
-        selected = [t for t in scored if t[0] > 0.0]
+        selected = [t for t in prelim if t[0] > 0.0]
 
     matches = []
     for final, _, __, p, why in selected:
