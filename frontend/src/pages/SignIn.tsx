@@ -25,10 +25,7 @@ export default function SignIn() {
         <p className="mt-1 text-slate-600 dark:text-slate-300">Use your UC Davis Google account to continue</p>
 
         <div className="mt-6 flex flex-col items-center">
-          <GoogleAuth onLogin={() => {
-            const target = (location.state && location.state.from) ? (location.state as any).from : '/'
-            navigate(target, { replace: true })
-          }} />
+          <GoogleAuth />
         </div>
 
         <div className="mt-5 text-sm text-slate-600 dark:text-slate-300">

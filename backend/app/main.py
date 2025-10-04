@@ -27,11 +27,6 @@ from .matching import (
     expand_query_text, SemanticIndex
 )
 from .email_utils import build_email, send_email_with_attachment
-from .cache import (
-    cache_similarity_results, get_cached_similarity_results,
-    cache_professor_list, get_cached_professor_list,
-    clear_professor_cache, clear_similarity_cache
-)
 import httpx
 import base64
 from urllib.parse import urljoin
@@ -53,23 +48,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ---- Rate Limiting ----
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-
-limiter = Limiter(key_func=get_remote_address)
-app = FastAPI(
-    title="LabLink DB API", 
-    version="1.0.0",
-    description="API for matching students with professors",
-    docs_url="/docs",
-    redoc_url="/redoc"
-)
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# Create API versioned router
-v1_router = APIRouter(prefix="/api/v1", tags=["v1"])
+app = FastAPI(title="LabLink DB API", version="1.0.0")
 
 # ---- Performance Monitoring ----
 def monitor_performance(func):
@@ -437,7 +416,7 @@ def get_professor(professor_id: int, db: Session = Depends(get_db)):
     if not p: raise HTTPException(404, "Professor not found")
     return to_prof_out(p)
 
-@v1_router.get("/departments", response_model=list[str])
+@app.get("/api/departments", response_model=list[str])
 def list_departments(db: Session = Depends(get_db)):
     # Always expose only Computer Science as the selectable department
     return ["Computer Science"]
@@ -445,15 +424,9 @@ def list_departments(db: Session = Depends(get_db)):
 @app.get("/api/reload_docs")
 def reload_docs(db: Session = Depends(get_db)):
     rebuild_vectorstore(db)
-    # Clear caches when reloading docs
-    clear_professor_cache()
-    clear_similarity_cache()
-    print("🗑️  Cleared all caches")
     return {"ok": True, "count": len(PROF_IDS)}
 
-@v1_router.post("/match", response_model=MatchResponse)
-@limiter.limit("10/minute")  # Rate limit: 10 requests per minute (expensive operation)
-@monitor_performance
+@app.post("/api/match", response_model=MatchResponse)
 def match_professors(
     request: Request,
     profile: StudentProfileIn = Body(...),
@@ -689,153 +662,3 @@ def scrape_photo(url: str):
     except Exception:
         return {"photo_url": ""}
 
-# Include the versioned router
-app.include_router(v1_router)
-
-# Add backward compatibility for old endpoints
-@app.get("/api/professors", response_model=dict)
-@limiter.limit("30/minute")
-@monitor_performance
-def list_professors_legacy(
-    request: Request, 
-    department: str | None = Query(None), 
-    page: int = Query(1, ge=1),
-    size: int = Query(20, ge=1, le=100),
-    db: Session = Depends(get_db)
-):
-    """Legacy endpoint - redirects to v1"""
-    # Try to get from cache first
-    cache_key = f"{department or 'all'}_page_{page}_size_{size}"
-    cached_result = get_cached_professor_list(cache_key)
-    if cached_result:
-        logger.info("📦 Using cached professor list")
-        return cached_result
-    
-    # If not in cache, fetch from database with pagination
-    offset = (page - 1) * size
-    profs = crud.list_professors(db, department, limit=size, offset=offset)
-    total_count = crud.count_professors(db, department)
-    
-    result = {
-        "data": [to_prof_out(p) for p in profs],
-        "pagination": {
-            "page": page,
-            "size": size,
-            "total": total_count,
-            "pages": (total_count + size - 1) // size
-        }
-    }
-    
-    # Cache the result
-    cache_professor_list(cache_key, result)
-    logger.info("💾 Cached professor list")
-    
-    return result
-
-@app.get("/api/professors/{professor_id}", response_model=ProfessorOut)
-@limiter.limit("60/minute")
-@monitor_performance
-def get_professor_legacy(request: Request, professor_id: int, db: Session = Depends(get_db)):
-    """Legacy endpoint - redirects to v1"""
-    p = crud.get_professor(db, professor_id)
-    if not p: raise HTTPException(404, "Professor not found")
-    return to_prof_out(p)
-
-@app.get("/api/departments", response_model=list[str])
-def list_departments_legacy(db: Session = Depends(get_db)):
-    """Legacy endpoint - redirects to v1"""
-    return ["Computer Science"]
-
-@app.post("/api/match", response_model=MatchResponse)
-@limiter.limit("10/minute")
-@monitor_performance
-def match_professors_legacy(
-    request: Request,
-    profile: StudentProfileIn = Body(...),
-    top_k: int | None = Query(None, ge=1, le=50),
-    department: str | None = Query(None),
-    w_interests: float = Query(0.55, ge=0.0, le=1.0),
-    w_skills: float = Query(0.35, ge=0.0, le=1.0),
-    w_pubs: float = Query(0.10, ge=0.0, le=1.0),
-    db: Session = Depends(get_db),
-    user: dict = Depends(require_ucdavis_user),
-):
-    """Legacy endpoint - redirects to v1"""
-    # Copy the match logic from the v1 endpoint
-    if not profile.interests.strip() and not (profile.skills or "").strip():
-        raise HTTPException(400, "Provide at least interests or skills")
-
-    # normalize weights and add small boost when multiple channels align
-    total = max(1e-9, w_interests + w_skills + w_pubs)
-    w_interests, w_skills, w_pubs = w_interests/total, w_skills/total, w_pubs/total
-
-    # department filter first
-    profs = crud.list_professors(db, department)
-    if not profs:
-        return MatchResponse(student_query="", department=department or "", weights={
-            "interests": w_interests, "skills": w_skills, "pubs": w_pubs
-        }, matches=[])
-
-    # prepare vector similarities once
-    query_text = f"{profile.interests} {profile.skills or ''}".strip()
-    # Expand query for lexical recall
-    expanded_q = expand_query_text(profile.interests, profile.skills)
-    sims_lex = VECSTORE.sims(expanded_q) if VECSTORE else [0.0] * len(PROF_IDS)
-    # Semantic similarities (graceful fallback to zeros if unavailable)
-    sims_sem = (SEM_INDEX.sims(query_text) if SEM_INDEX else [0.0] * len(PROF_IDS))
-
-    # map professor id -> sim (since VECSTORE order is all profs, not filtered)
-    id_to_lex = {pid: sims_lex[i] for i, pid in enumerate(PROF_IDS)}
-    id_to_sem = {pid: sims_sem[i] for i, pid in enumerate(PROF_IDS)}
-
-    # student skills and interests
-    student_skills = extract_skills(profile.skills or "")
-    interest_tokens = [t for t in tokenize(profile.interests) if len(t) > 2][:12]
-    
-    # Calculate scores for each professor
-    matches = []
-    for p in profs:
-        # Get similarities for this professor
-        lex_sim = id_to_lex.get(p.id, 0.0)
-        sem_sim = id_to_sem.get(p.id, 0.0)
-        
-        # Calculate skill overlap
-        prof_skills = [s.skill.name.lower() for s in p.professor_skills]
-        skill_jaccard, skill_hits = jaccard(student_skills, prof_skills)
-        
-        # Calculate publication score
-        pubs = extract_publications(p)
-        pub_score, pub_hits, bonus = pubs_score(interest_tokens, pubs)
-        
-        # Combine scores
-        combined_score = (
-            w_interests * (lex_sim + sem_sim) / 2 +
-            w_skills * skill_jaccard +
-            w_pubs * pub_score
-        )
-        
-        # Find matching interests and skills
-        interests_hits = [token for token in interest_tokens if token in (p.research_interests or "").lower()]
-        skills_hits = [skill for skill in student_skills if skill in prof_skills]
-        
-        matches.append(MatchItem(
-            score=combined_score,
-            score_percent=min(100, combined_score * 100),
-            why={
-                "interests_hits": interests_hits,
-                "skills_hits": skills_hits
-            },
-            professor=to_prof_out(p)
-        ))
-    
-    # Sort by score and limit results
-    matches.sort(key=lambda x: x.score, reverse=True)
-    if top_k:
-        matches = matches[:top_k]
-    
-    return MatchResponse(
-        student_query=query_text,
-        department=department or "",
-        weights={"interests": w_interests, "skills": w_skills, "pubs": w_pubs},
-        matches=matches
-    )

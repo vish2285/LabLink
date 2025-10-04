@@ -60,20 +60,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const payload = (e.data as any)
       if (payload?.type === 'google-auth' && payload?.idToken) {
         const token = String(payload.idToken)
-        // Exchange for HttpOnly session cookie
+        // Exchange for HttpOnly session cookie; do NOT persist the token client-side
         loginWithIdToken(token)
           .then((resp) => {
-            try { window.localStorage.setItem(TOKEN_KEY, token) } catch {}
-            setIdToken(token)
             const u: AuthUser | null = resp?.user ? { email: resp.user.email, name: resp.user.name, picture: resp.user.picture } : decodeIdToken(token)
             if (u) {
               try { window.localStorage.setItem(USER_KEY, JSON.stringify(u)) } catch {}
               setUser(u)
             }
           })
-          .catch(() => {
-            // noop; login API will return error and page can surface it if needed
-          })
+          .catch(() => {})
       }
     }
     window.addEventListener('message', handler)
@@ -135,8 +131,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => { if (timer) window.clearTimeout(timer) }
   }, [idToken])
 
+  // Hydrate from cookie session on mount
+  useEffect(() => {
+    fetchMe().then((me) => {
+      const u: AuthUser = { email: me.email, name: me.name, picture: me.picture }
+      setUser(u)
+      try { window.localStorage.setItem(USER_KEY, JSON.stringify(u)) } catch {}
+    }).catch(() => {})
+  }, [])
+
   const value = useMemo<AuthContextValue>(() => ({
-    isSignedIn: Boolean(idToken),
+    isSignedIn: Boolean(user || idToken),
     idToken,
     user,
     signOut: () => {
