@@ -1,0 +1,17 @@
+name: keepalive
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"  # every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health
+        run: curl -fsS https://lablink.onrender.com/api/health || true
+      - name: Ping departments
+        run: curl -fsS https://lablink.onrender.com/api/departments || true
+
+
