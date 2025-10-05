@@ -137,6 +137,11 @@ def get_current_user(
         sess = crud.get_session(db, session_token)
         if not sess:
             raise HTTPException(401, "Invalid or expired session")
+        # Sliding session: refresh TTL on access
+        try:
+            crud.touch_session(db, sess, ttl_seconds=SESSION_TTL_SECONDS)
+        except Exception:
+            pass
         user = db.query(models.User).filter(models.User.id == sess.user_id).first()
         if not user:
             raise HTTPException(401, "User not found")
@@ -433,8 +438,8 @@ def get_professor(professor_id: int, db: Session = Depends(get_db)):
 
 @app.get("/api/departments", response_model=list[str])
 def list_departments(db: Session = Depends(get_db)):
-    # Always expose only Computer Science as the selectable department
-    return ["Computer Science"]
+    deps = crud.list_departments(db)
+    return deps
 
 @app.get("/api/reload_docs")
 def reload_docs(db: Session = Depends(get_db)):

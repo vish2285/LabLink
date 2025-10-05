@@ -103,7 +103,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (window.__departmentsLoading) return
       window.__departmentsLoading = true
       
-      const res = await fetch('/api/departments', { credentials: 'omit' })
+      const res = await fetch('/api/departments', { credentials: 'include' })
       if (res.ok) {
         const deps = await res.json()
         if (Array.isArray(deps) && deps.length) {

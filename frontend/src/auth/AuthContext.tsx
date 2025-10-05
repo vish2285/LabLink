@@ -42,7 +42,9 @@ function decodeIdToken(token: string): AuthUser | null {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [idToken, setIdToken] = useState<string | null>(null)
+  const [idToken, setIdToken] = useState<string | null>(() => {
+    try { return window.localStorage.getItem(TOKEN_KEY) } catch { return null }
+  })
   const [user, setUser] = useState<AuthUser | null>(() => {
     try {
       const raw = window.localStorage.getItem(USER_KEY)
@@ -72,9 +74,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setUser({ email: data.user.email, name: data.user.name, picture: data.user.picture })
               try { window.localStorage.setItem(USER_KEY, JSON.stringify(data.user)) } catch {}
             }
-            // Clear any legacy token persisted locally
-            try { window.localStorage.removeItem(TOKEN_KEY) } catch {}
-            setIdToken(null)
+            // Keep token temporarily for bearer fallback/relogin
+            try { window.localStorage.setItem(TOKEN_KEY, token) } catch {}
+            setIdToken(token)
             return
           }
         } catch {}

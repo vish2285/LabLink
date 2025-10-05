@@ -98,3 +98,12 @@ def delete_session(db: Session, token: str) -> None:
     if obj:
         db.delete(obj)
         db.commit()
+
+def touch_session(db: Session, sess: models.SessionToken, *, ttl_seconds: int = 1800) -> None:
+    """Extend the session expiration (sliding session)."""
+    try:
+        sess.expires_at = int(time.time()) + ttl_seconds
+        db.add(sess)
+        db.commit()
+    except Exception:
+        db.rollback()
