@@ -131,13 +131,14 @@ def get_current_user(
     db: Session = Depends(get_db),
     session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME),
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    response: Response = None,
 ) -> dict:
     # Prefer cookie-based session
     if session_token:
         sess = crud.get_session(db, session_token)
         if not sess:
             raise HTTPException(401, "Invalid or expired session")
-        # Sliding session: refresh TTL on access
+        # Sliding session: refresh TTL on access and refresh cookie expiry
         try:
             crud.touch_session(db, sess, ttl_seconds=SESSION_TTL_SECONDS)
         except Exception:
@@ -145,6 +146,23 @@ def get_current_user(
         user = db.query(models.User).filter(models.User.id == sess.user_id).first()
         if not user:
             raise HTTPException(401, "User not found")
+        try:
+            # Refresh cookie expiry so active users stay signed in
+            if response is None:
+                response = Response()
+            expires = datetime.utcnow() + timedelta(seconds=SESSION_TTL_SECONDS)
+            response.set_cookie(
+                key=SESSION_COOKIE_NAME,
+                value=sess.token,
+                httponly=True,
+                secure=COOKIE_SECURE,
+                samesite="none" if COOKIE_SAMESITE == "none" else ("strict" if COOKIE_SAMESITE == "strict" else "lax"),
+                domain=COOKIE_DOMAIN,
+                expires=expires.strftime("%a, %d %b %Y %H:%M:%S GMT"),
+                path="/",
+            )
+        except Exception:
+            pass
         return {"sub": f"session:{user.id}", "email": user.email, "name": user.name, "picture": user.picture}
 
     # Fallback legacy Bearer Google ID token

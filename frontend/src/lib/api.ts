@@ -4,7 +4,7 @@ import type { Professor, StudentProfile, MatchResult } from '../types'
 const RAW_BASE = (import.meta as any).env?.VITE_API_BASE ? String((import.meta as any).env.VITE_API_BASE) : ''
 export const API_BASE = RAW_BASE ? RAW_BASE.replace(/\/+$/, '') : ''
 
-async function authorizedFetch(input: RequestInfo, init: RequestInit = {}) {
+async function authorizedFetch(input: RequestInfo, init: RequestInit = {}, _retry = true) {
   const token = (() => { try { return window.localStorage.getItem('google_id_token') } catch { return null } })()
   const headers: Record<string, string> = {
     ...(init.headers as Record<string, string> | undefined),
@@ -16,6 +16,20 @@ async function authorizedFetch(input: RequestInfo, init: RequestInit = {}) {
     req = input.replace(/^\/\/+/, '/')
   }
   const res = await fetch(req, { ...init, headers, credentials: 'include' })
+  if (res.status === 401 && token && _retry) {
+    try {
+      // Refresh cookie session using saved Google ID token, then retry once
+      await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id_token: token }),
+      })
+      return await authorizedFetch(req, init, false)
+    } catch {
+      // fall through
+    }
+  }
   return res
 }
 
