@@ -12,17 +12,32 @@ except Exception:
     SKLEARN_OK = False
 
 # Optional semantic embeddings (graceful fallback if not installed)
-try:
-    # sentence-transformers pulls in torch; if unavailable at runtime, we fallback
-    from sentence_transformers import SentenceTransformer  # type: ignore
-    from sentence_transformers import CrossEncoder  # type: ignore
-    import numpy as _np  # type: ignore
-    SEM_OK = True
-except Exception:
-    SentenceTransformer = None  # type: ignore
-    CrossEncoder = None  # type: ignore
-    _np = None  # type: ignore
-    SEM_OK = False
+# Lazy import gates to avoid loading torch/transformers on low-memory deploys
+SentenceTransformer = None  # type: ignore
+CrossEncoder = None  # type: ignore
+_np = None  # type: ignore
+SEM_OK = False
+_LAZY_IMPORTED = False
+
+def _lazy_import_st():
+    global SentenceTransformer, CrossEncoder, _np, SEM_OK, _LAZY_IMPORTED
+    if _LAZY_IMPORTED:
+        return
+    try:
+        from sentence_transformers import SentenceTransformer as _ST  # type: ignore
+        from sentence_transformers import CrossEncoder as _CE  # type: ignore
+        import numpy as _NP  # type: ignore
+        SentenceTransformer = _ST  # type: ignore
+        CrossEncoder = _CE  # type: ignore
+        _np = _NP  # type: ignore
+        SEM_OK = True
+    except Exception:
+        SentenceTransformer = None  # type: ignore
+        CrossEncoder = None  # type: ignore
+        _np = None  # type: ignore
+        SEM_OK = False
+    finally:
+        _LAZY_IMPORTED = True
 
 _WS = re.compile(r"\s+")
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
@@ -204,9 +219,16 @@ class SemanticIndex:
     If dependencies are not available, this degrades to a no-op returning zeros.
     """
     def __init__(self, prof_docs: List[str]):
-        # Only enable if library is available AND explicitly enabled via env
+        # Only enable if explicitly enabled via env; import heavy deps lazily
         env_enabled = str(os.getenv("SEMANTIC_ENABLED", "0")).lower() in {"1", "true", "yes"}
-        self.enabled = bool(SEM_OK and prof_docs and env_enabled)
+        if not (env_enabled and prof_docs):
+            self.enabled = False
+            self.docs = [norm_text(d) for d in (prof_docs or []) if (d or "").strip()]
+            self._model = None
+            self._emb = None
+            return
+        _lazy_import_st()
+        self.enabled = bool(SEM_OK and prof_docs)
         self.docs = [norm_text(d) for d in (prof_docs or []) if (d or "").strip()]
         self._model = None
         self._emb = None
@@ -267,7 +289,10 @@ class CrossEncoderReranker:
         self.model = None
         try:
             enabled = str(os.getenv("SEMANTIC_RERANK_ENABLED", "0")).lower() in {"1", "true", "yes"}
-            if not enabled or CrossEncoder is None:
+            if not enabled:
+                return
+            _lazy_import_st()
+            if CrossEncoder is None:
                 return
             name = model_name or os.getenv("SEMANTIC_RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
             self.model = CrossEncoder(name)  # type: ignore
