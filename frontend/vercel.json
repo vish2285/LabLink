@@ -1,7 +1,7 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://lablink.onrender.com/api/$1" },
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/api/:path*", "destination": "https://lablink.onrender.com/api/:path*" },
+    { "source": "/:path*", "destination": "/" }
   ]
 }
 

@@ -42,34 +42,9 @@ def _lazy_import_st():
 _WS = re.compile(r"\s+")
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
 
-from .skill_aliases import SKILL_ALIASES
+from .aliases import SKILL_ALIASES, INTEREST_ALIASES
 
-# Light synonym/alias expansion for interest phrases (used for query expansion only)
-# Keep compact and conservative to avoid noisy expansions
-INTEREST_ALIASES: Dict[str, List[str]] = {
-    "nlp": ["natural language processing", "computational linguistics"],
-    "natural language processing": ["nlp", "language models", "text processing"],
-    "cv": ["computer vision", "image recognition", "visual recognition"],
-    "computer vision": ["cv", "image understanding", "object detection"],
-    "ml": ["machine learning"],
-    "machine learning": ["ml", "statistical learning"],
-    "dl": ["deep learning"],
-    "deep learning": ["dl", "neural networks"],
-    "rl": ["reinforcement learning"],
-    "large language model": ["llm", "transformers"],
-    "large language models": ["llms", "foundation models"],
-    "gnn": ["graph neural networks", "graph learning"],
-    "graph neural networks": ["gnn", "graph representation learning"],
-    "vision transformer": ["vit", "transformer vision", "image transformer", "vit"],
-    "retrieval augmented generation": ["rag", "retrieval-augmented generation"],
-    "self-supervised learning": ["ssl", "contrastive learning"],
-    "causal inference": ["causality", "causal discovery"],
-    "bayesian inference": ["probabilistic modeling", "bayesian modeling"],
-    "robotics": ["autonomous systems", "robot learning"],
-    "graph representation learning": ["gnn", "graph neural networks"],
-    "time series": ["temporal modeling", "sequence forecasting"],
-    "optimization": ["stochastic optimization", "convex optimization"],
-}
+# INTEREST_ALIASES is imported from .aliases
 
 def norm_text(s: str) -> str:
     return _WS.sub(" ", (s or "").strip()).lower()
