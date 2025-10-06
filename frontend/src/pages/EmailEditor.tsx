@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FiMail, FiPaperclip, FiExternalLink, FiArrowLeft } from 'react-icons/fi'
 import Button from '../components/Button'
@@ -11,17 +11,13 @@ import LoadingSpinner from '../components/LoadingSpinner'
 export default function EmailEditor() {
   const { selectedProfessor, emailDraft, setEmailDraft, profile, emailSubject, setEmailSubject } = useApp() as any
   const { user } = useAuth()
-  const [generatedEmail, setGeneratedEmail] = useState<{ subject: string; body: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [file, setFile] = useReactState<File | null>(null)
   const [subjectText, setSubjectText] = useState<string>(emailSubject || '')
   
   // Remove verbose logs in production for privacy
   
-  const body = useMemo(
-    () => generatedEmail?.body || emailDraft,
-    [generatedEmail, emailDraft]
-  )
+  const body = emailDraft
 
   async function handleGenerateEmail() {
     if (!selectedProfessor || !profile) return
@@ -37,7 +33,6 @@ export default function EmailEditor() {
         professor_email: selectedProfessor.email || '',
         topic: profile.interests || '',
       })
-      setGeneratedEmail(email)
       const subj = email.subject || ''
       setSubjectText(subj)
       setEmailSubject(subj)
