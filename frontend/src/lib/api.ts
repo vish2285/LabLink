@@ -4,12 +4,18 @@ import type { Professor, StudentProfile, MatchResult } from '../types'
 const RAW_BASE = (import.meta as any).env?.VITE_API_BASE ? String((import.meta as any).env.VITE_API_BASE) : ''
 export const API_BASE = RAW_BASE ? RAW_BASE.replace(/\/+$/, '') : ''
 
+// Specific error to signal auth failures after retries
+export class AuthError extends Error {
+  constructor(message = 'Unauthorized') { super(message); this.name = 'AuthError' }
+}
+
 // Try to obtain a fresh Google ID token via One Tap prompt
-async function getFreshGoogleIdToken(): Promise<string | null> {
+async function getFreshGoogleIdToken(timeoutMs?: number): Promise<string | null> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const w: any = window as any
     if (!w.google?.accounts?.id?.prompt) return null
+    const ms = Number((import.meta as any).env?.VITE_GIS_PROMPT_TIMEOUT_MS ?? '') || timeoutMs || 4000
     return await new Promise<string | null>((resolve) => {
       let resolved = false
       const done = (val: string | null) => { if (!resolved) { resolved = true; resolve(val) } }
@@ -24,10 +30,16 @@ async function getFreshGoogleIdToken(): Promise<string | null> {
       window.addEventListener('message', onMessage)
       // Show prompt; GIS will postMessage via our existing AuthContext handler
       try { w.google.accounts.id.prompt(() => {}) } catch { /* ignore */ }
-      // Timeout after 6 seconds
-      setTimeout(() => { window.removeEventListener('message', onMessage); done(null) }, 6000)
+      // Timeout
+      setTimeout(() => { window.removeEventListener('message', onMessage); done(null) }, ms)
     })
-  } catch { return null }
+  } catch (err) {
+    if ((import.meta as any).env?.DEV) {
+      // eslint-disable-next-line no-console
+      console.warn('getFreshGoogleIdToken failed', err)
+    }
+    return null
+  }
 }
 
 async function authorizedFetch(input: RequestInfo, init: RequestInit = {}, _retry = true) {
@@ -69,25 +81,27 @@ async function authorizedFetch(input: RequestInfo, init: RequestInit = {}, _retr
         return await authorizedFetch(req, init, false)
       }
     } catch { /* ignore */ }
+    // Give callers a clear signal
+    throw new AuthError('Unauthorized')
   }
   return res
 }
 
 export async function fetchProfessors(): Promise<Professor[]> {
   const res = await authorizedFetch(`${API_BASE}/api/professors`)
-  if (!res.ok) throw new Error('Failed to load professors')
+  if (!res.ok) throw new Error(`Failed to load professors: ${res.status} ${res.statusText}`)
   return res.json()
 }
 
 export async function fetchDepartments(): Promise<string[]> {
   const res = await fetch(`${API_BASE}/api/departments`, { credentials: 'omit' })
-  if (!res.ok) throw new Error('Failed to load departments')
+  if (!res.ok) throw new Error(`Failed to load departments: ${res.status} ${res.statusText}`)
   return res.json()
 }
 
 export async function fetchProfessor(id: number): Promise<Professor> {
   const res = await authorizedFetch(`${API_BASE}/api/professors/${id}`)
-  if (!res.ok) throw new Error('Failed to load professor')
+  if (!res.ok) throw new Error(`Failed to load professor ${id}: ${res.status} ${res.statusText}`)
   return res.json()
 }
 
@@ -98,16 +112,22 @@ export async function matchProfessors(profile: StudentProfile, department?: stri
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(profile),
   })
-  if (!res.ok) throw new Error('Failed to match')
+  if (!res.ok) throw new Error(`Failed to match: ${res.status} ${res.statusText}`)
   const data = await res.json()
   
   if (data && Array.isArray(data.matches)) {
-    return data.matches.map((m: any) => ({
-      ...m.professor,
-      score: m.score,
-      score_percent: m.score_percent,
-      why: m.why,
-    })) as MatchResult[]
+    const out: MatchResult[] = []
+    for (const m of data.matches) {
+      if (m && m.professor) {
+        out.push({
+          ...(m.professor as Professor),
+          score: m.score,
+          score_percent: m.score_percent,
+          why: m.why,
+        } as MatchResult)
+      }
+    }
+    return out
   }
   return []
 }
@@ -126,7 +146,7 @@ export async function generateEmail(request: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   })
-  if (!res.ok) throw new Error('Failed to generate email')
+  if (!res.ok) throw new Error(`Failed to generate email: ${res.status} ${res.statusText}`)
   return res.json()
 }
 
