@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import CursorGrid from '../components/CursorGrid'
 import Button from '../components/Button'
-import { FiUserPlus, FiSearch, FiMail } from 'react-icons/fi'
+import { FiUserPlus, FiSearch, FiMail, FiLayers } from 'react-icons/fi'
 
 export default function Landing() {
   const howRef = useRef<HTMLDivElement | null>(null)
@@ -20,14 +20,15 @@ export default function Landing() {
           <p className="mx-auto max-w-2xl text-slate-700/90 dark:text-slate-300/90 text-lg">
             Tell us your interests and skills. LabLink surfaces matching faculty and drafts your first outreach email.
           </p>
-          <div className="mx-auto max-w-md rounded-md border border-slate-300/60 dark:border-white/20 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm text-slate-700 dark:text-slate-300">
-            We’re actively adding more departments. Check back for expanded coverage.
+          <div className="mx-auto max-w-md rounded-md border border-slate-300/60 dark:border-white/20 bg-white/70 dark:bg-white/5 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-300 flex items-center justify-center gap-2">
+            <FiLayers className="h-4 w-4" />
+            <span>More departments coming soon.</span>
           </div>
-          <div className="items-center justify-center gap-x-3 space-y-3 sm:flex sm:space-y-0">
-            <Button asChild>
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-3">
+            <Button asChild className="w-full sm:w-auto">
               <a href="/profile">Create your profile</a>
             </Button>
-            <Button variant="ghost" onClick={() => {
+            <Button variant="ghost" className="w-full sm:w-auto" onClick={() => {
               try { howRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) } catch {}
             }}>How it works</Button>
           </div>
