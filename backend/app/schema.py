@@ -23,21 +23,23 @@ class ProfessorOut(BaseModel):
 class StudentProfileIn(BaseModel):
     name: Optional[str] = "Anonymous"
     email: Optional[str] = ""
-    interests: str = Field(..., description="e.g. 'computer vision, robustness, NLP'")
+    interests: Optional[str] = Field("", description="e.g. 'computer vision, robustness, NLP'")
     skills: Optional[str] = Field("", description="e.g. 'python, pytorch, cuda'")
     availability: Optional[str] = ""
     
     @field_validator('interests')
     @classmethod
     def validate_interests(cls, v):
-        if not v or not v.strip():
-            raise ValueError('Interests cannot be empty')
-        if len(v) > 2000:
+        # Allow empty interests so users can submit skills-only queries
+        if not v or not str(v).strip():
+            return ""
+        s = str(v).strip()
+        if len(s) > 2000:
             raise ValueError('Interests too long (max 2000 characters)')
         # Basic XSS protection
-        if re.search(r'<script|javascript:|on\w+\s*=', v, re.IGNORECASE):
+        if re.search(r'<script|javascript:|on\w+\s*=', s, re.IGNORECASE):
             raise ValueError('Invalid characters in interests')
-        return v.strip()
+        return s
     
     @field_validator('skills')
     @classmethod

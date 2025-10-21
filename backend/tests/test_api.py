@@ -134,9 +134,9 @@ def test_input_validation():
     )
     assert valid_profile.interests == "machine learning"
     
-    # Invalid input - empty interests
-    with pytest.raises(ValueError, match="Interests cannot be empty"):
-        StudentProfileIn(interests="", skills="python")
+    # Skills-only allowed (empty interests accepted)
+    skills_only = StudentProfileIn(interests="", skills="python")
+    assert skills_only.interests == ""
     
     # Invalid input - XSS attempt
     with pytest.raises(ValueError, match="Invalid characters"):
