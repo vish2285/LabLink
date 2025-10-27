@@ -16,11 +16,12 @@ def seed():
             db.merge(Professor(
                 id=int(p.get("id") or i),
                 name=p.get("name",""),
-                department=p.get("department",""),
-                email=p.get("email",""),
-                profile_link=p.get("profile_link",""),
-                research_interests=p.get("research_interests",""),
-                recent_publications=json.dumps(p.get("recent_publications") or []),
+                department=p.get("department"),
+                email=p.get("email"),
+                profile_link=p.get("profile_link"),
+                research_interests=p.get("research_interests"),
+                personal_site=p.get("personal_site"),
+                photo_url=(p.get("photo_url") or ""),
             ))
         db.commit()
     finally:

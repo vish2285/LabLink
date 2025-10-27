@@ -7,7 +7,6 @@ import secrets, time
 
 def list_professors(db: Session, department_substr: Optional[str] = None, limit: Optional[int] = None, offset: Optional[int] = None) -> List[models.Professor]:
     q = db.query(models.Professor).options(
-        joinedload(models.Professor.publications),
         joinedload(models.Professor.professor_skills).joinedload(models.ProfessorSkill.skill)
     )
     if department_substr:
@@ -33,7 +32,6 @@ def get_professor(db: Session, professor_id: int) -> Optional[models.Professor]:
     return (
         db.query(models.Professor)
         .options(
-            joinedload(models.Professor.publications),
             joinedload(models.Professor.professor_skills).joinedload(models.ProfessorSkill.skill)
         )
         .filter(models.Professor.id == professor_id)

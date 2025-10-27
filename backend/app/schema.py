@@ -2,12 +2,6 @@ from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Dict, Any
 import re
 
-class PublicationOut(BaseModel):
-    title: Optional[str] = None
-    abstract: Optional[str] = None
-    year: Optional[int] = None
-    link: Optional[str] = None
-
 class ProfessorOut(BaseModel):
     id: int
     name: str
@@ -18,7 +12,6 @@ class ProfessorOut(BaseModel):
     personal_site: Optional[str] = ""
     photo_url: Optional[str] = ""
     skills: List[str] = []
-    recent_publications: List[PublicationOut] = []
 
 class StudentProfileIn(BaseModel):
     name: Optional[str] = "Anonymous"

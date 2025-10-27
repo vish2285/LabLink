@@ -10,7 +10,7 @@ def seed_from_json(json_path: str):
     with SessionLocal.begin() as db:  # auto-commit/rollback
         # wipe existing
         db.query(models.ProfessorSkill).delete()
-        db.query(models.Publication).delete()
+        # Publication model removed
         db.query(models.Skill).delete()
         db.query(models.Professor).delete()
 
@@ -30,16 +30,7 @@ def seed_from_json(json_path: str):
             db.add(prof)
             db.flush()  # ensure prof.id
 
-            # publications
-            for d in p.get("recent_publications") or []:
-                pub = models.Publication(
-                    professor_id=prof.id,
-                    title=d.get("title"),
-                    abstract=d.get("abstract"),
-                    year=d.get("year"),
-                    link=d.get("link"),
-                )
-                db.add(pub)
+            # publications removed
 
             # skills (dedupe via cache)
             for s in p.get("skills") or []:

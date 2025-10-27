@@ -47,7 +47,6 @@ def main():
         research_interests=p.research_interests,
         profile_link=p.profile_link,
         photo_url=getattr(p, 'photo_url', ''),
-        recent_publications=getattr(p, 'recent_publications', '[]'),
       ))
     s_dst.commit()
 
@@ -61,17 +60,7 @@ def main():
       s_dst.merge(models.ProfessorSkill(id=ps.id, professor_id=ps.professor_id, skill_id=ps.skill_id))
     s_dst.commit()
 
-    # Publications
-    for d in s_src.scalars(select(models.Publication)).all():
-      s_dst.merge(models.Publication(
-        id=d.id,
-        professor_id=d.professor_id,
-        title=d.title,
-        abstract=d.abstract,
-        year=d.year,
-        link=d.link,
-      ))
-    s_dst.commit()
+    # Publications removed
 
   print('✅ Migration complete')
 

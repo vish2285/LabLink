@@ -13,7 +13,6 @@ from ..database import DATABASE_URL  # type: ignore
 TABLES = [
     ("skills", "id"),
     ("professors", "id"),
-    ("publications", "id"),
     ("professor_skills", "id"),
 ]
 

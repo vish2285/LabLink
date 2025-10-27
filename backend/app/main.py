@@ -19,11 +19,11 @@ from . import crud
 from . import models
 from .seed_json import seed_from_json  # reuse JSON seeder when available
 from .schema import (
-    ProfessorOut, PublicationOut, StudentProfileIn,
+    ProfessorOut, StudentProfileIn,
     MatchResponse, MatchItem, EmailRequest, EmailDraft
 )
 from .matching import (
-    prof_to_doc, VectorStore, extract_skills, jaccard, pubs_score, tokenize, norm_text,
+    prof_to_doc, VectorStore, extract_skills, jaccard, tokenize, norm_text,
     expand_query_text, SemanticIndex
 )
 from .matching import CrossEncoderReranker
@@ -206,32 +206,8 @@ PROF_IDS: list[int] = []
 PERSONAL_SITE_MAP: dict[int, str] = {}
 
 def extract_publications(p) -> list[dict]:
-    """Return publications as list of dicts from ORM relation or JSON fallback."""
-    try:
-        if getattr(p, "publications", None):
-            return [
-                {
-                    "title": d.title,
-                    "abstract": d.abstract,
-                    "year": d.year,
-                    "link": d.link,
-                }
-                for d in p.publications
-            ]
-        # Fallback to JSON stored in Professor.recent_publications
-        data = json.loads(getattr(p, "recent_publications", "[]") or "[]")
-        pubs: list[dict] = []
-        for d in data or []:
-            if isinstance(d, dict):
-                pubs.append({
-                    "title": d.get("title"),
-                    "abstract": d.get("abstract"),
-                    "year": d.get("year"),
-                    "link": d.get("link"),
-                })
-        return pubs
-    except Exception:
-        return []
+    # Publications removed; keep stub returning empty list for compatibility
+    return []
 
 def rebuild_vectorstore(db: Session):
     global VECSTORE, SEM_INDEX, DOCS, PROF_IDS
@@ -241,10 +217,8 @@ def rebuild_vectorstore(db: Session):
     payloads = []
     for p in profs:
         skills = [ps.skill.name for ps in p.professor_skills]
-        pubs = extract_publications(p)
         payloads.append({
             "research_interests": p.research_interests or "",
-            "recent_publications": pubs,
             "skills": skills
         })
     DOCS = [prof_to_doc(x) for x in payloads]
@@ -315,15 +289,6 @@ def startup():
                                     dept = (row.get("dept") or row.get("department") or "").strip()
                                     email = (row.get("email") or "").strip()
                                     interests = (row.get("interests") or "").strip()
-                                    pubs_raw = (row.get("publications") or "").strip()
-                                    pubs = []
-                                    if pubs_raw:
-                                        # Split on semicolon or pipe
-                                        parts = re.split(r"[;|]", pubs_raw)
-                                        for p in parts:
-                                            t = (p or "").strip()
-                                            if t:
-                                                pubs.append({"title": t})
                                     db.add(models.Professor(
                                         name=name,
                                         department=dept or None,
@@ -331,7 +296,6 @@ def startup():
                                         research_interests=interests or None,
                                         profile_link=None,
                                         photo_url="",
-                                        recent_publications=json.dumps(pubs),
                                     ))
                                 db.commit()
                         except Exception:
@@ -350,8 +314,6 @@ def pct(x: float) -> float: return round(clamp01(x) * 100.0, 2)
 
 def to_prof_out(p) -> ProfessorOut:
     skills = [ps.skill.name for ps in p.professor_skills]
-    pub_dicts = extract_publications(p)
-    pubs = [PublicationOut(**d) for d in pub_dicts]
     # Prefer explicit personal_site; fall back only to JSON map (do not use profile_link)
     _personal_site = (
         getattr(p, 'personal_site', '') or
@@ -362,7 +324,7 @@ def to_prof_out(p) -> ProfessorOut:
         research_interests=p.research_interests, profile_link=p.profile_link,
         personal_site=_personal_site,
         photo_url=getattr(p, 'photo_url', ''),
-        skills=skills, recent_publications=pubs
+        skills=skills
     )
 
 # ---- Routes ----
@@ -430,12 +392,29 @@ def auth_login(id_token: str = Body(..., embed=True), response: Response = None,
 
 @app.post("/api/auth/logout")
 def auth_logout(response: Response, db: Session = Depends(get_db), session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME)):
-    if session_token:
-        try:
-            crud.delete_session(db, session_token)
-        except Exception:
-            pass
-    response.delete_cookie(key=SESSION_COOKIE_NAME, domain=COOKIE_DOMAIN, path="/")
+    if not session_token:
+        # no session to clear
+        response.delete_cookie(
+            key=SESSION_COOKIE_NAME,
+            httponly=True,
+            secure=COOKIE_SECURE,
+            samesite="none" if COOKIE_SAMESITE == "none" else ("strict" if COOKIE_SAMESITE == "strict" else "lax"),
+            domain=COOKIE_DOMAIN,
+            path="/",
+        )
+        return {"ok": True}
+    try:
+        crud.delete_session(db, session_token)
+    except Exception:
+        pass
+    response.delete_cookie(
+        key=SESSION_COOKIE_NAME,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="none" if COOKIE_SAMESITE == "none" else ("strict" if COOKIE_SAMESITE == "strict" else "lax"),
+        domain=COOKIE_DOMAIN,
+        path="/",
+    )
     return {"ok": True}
 
 @app.get("/api/auth/me")
@@ -464,90 +443,57 @@ def reload_docs(db: Session = Depends(get_db)):
     rebuild_vectorstore(db)
     return {"ok": True, "count": len(PROF_IDS)}
 
+# ---- Matching endpoints ----
 @app.post("/api/match", response_model=MatchResponse)
 def match_professors(
-    request: Request,
-    profile: StudentProfileIn = Body(...),
-    top_k: int | None = Query(None, ge=1, le=50),
-    department: str | None = Query(None),
-    w_interests: float = Query(0.55, ge=0.0, le=1.0),
-    w_skills: float = Query(0.35, ge=0.0, le=1.0),
-    w_pubs: float = Query(0.10, ge=0.0, le=1.0),
-    suggest_when_empty: bool = Query(False),
-    db: Session = Depends(get_db),
+    profile: StudentProfileIn,
+    department: Optional[str] = Query(None),
     user: dict = Depends(require_ucdavis_user),
 ):
-    if not profile.interests.strip() and not (profile.skills or "").strip():
-        raise HTTPException(400, "Provide at least interests or skills")
+    query_text = norm_text((profile.interests or ""))
 
-    # normalize weights and add small boost when multiple channels align
-    total = max(1e-9, w_interests + w_skills + w_pubs)
-    w_interests, w_skills, w_pubs = w_interests/total, w_skills/total, w_pubs/total
+    profs = crud.list_professors(db=next(get_db()), department_substr=department or None)
 
-    # department filter first
-    profs = crud.list_professors(db, department)
-    if not profs:
-        return MatchResponse(student_query="", department=department or "", weights={
-            "interests": w_interests, "skills": w_skills, "pubs": w_pubs
-        }, matches=[])
+    # fixed weights (request does not carry weights)
+    w_interests = 0.6
+    w_skills = 0.4
+    w_pubs = 0.0
 
-    # prepare vector similarities once
-    query_text = f"{profile.interests} {profile.skills or ''}".strip()
-    # Expand query for lexical recall
-    expanded_q = expand_query_text(profile.interests, profile.skills)
-    sims_lex = VECSTORE.sims(expanded_q) if VECSTORE else [0.0] * len(PROF_IDS)
-    # Semantic similarities (graceful fallback to zeros if unavailable)
-    sims_sem = (SEM_INDEX.sims(query_text) if SEM_INDEX else [0.0] * len(PROF_IDS))
+    # Expand query with synonyms and extracted skills
+    expanded = expand_query_text(query_text, profile.skills or "")
 
-    # map professor id -> sim (since VECSTORE order is all profs, not filtered)
-    id_to_lex = {pid: sims_lex[i] for i, pid in enumerate(PROF_IDS)}
-    id_to_sem = {pid: sims_sem[i] for i, pid in enumerate(PROF_IDS)}
-
-    # student skills and interests
-    student_skills = extract_skills(profile.skills or "")
-    interest_tokens = [t for t in tokenize(profile.interests) if len(t) > 2][:12]
-    # Preserve multi-word interest phrases split by comma/semicolon for why-details
-    interest_phrases_raw = [s.strip() for s in re.split(r"[,;]", profile.interests) if s.strip()]
-    interest_phrases_norm = [norm_text(s) for s in interest_phrases_raw]
-
-    scored = []
+    scored: list[tuple[float, int, int, Any, dict]] = []
     for p in profs:
-        # Blend lexical and semantic interests when semantic is available
-        lex = id_to_lex.get(p.id, 0.0)
-        sem = id_to_sem.get(p.id, 0.0)
-        if sem > 0.0:
-            # Favor semantic more heavily for maximum paraphrase robustness
-            sim_interests = clamp01(0.40 * lex + 0.60 * sem)
-        else:
-            sim_interests = clamp01(lex)
-        # Suppress noise when both signals are negligible (gibberish queries)
-        if (lex < 0.02) and (sem < 0.25):
-            sim_interests = 0.0
-
         prof_skills = [ps.skill.name for ps in p.professor_skills]
-        jac, skill_hits = jaccard(student_skills, prof_skills)
-        # Skill precision/recall/F1 to penalize missing required skills
-        A, B = set(student_skills), set(prof_skills)
+        # Tokenize interests and compute similarity
+        tokens = tokenize(p.research_interests or "")
+        # Cosine-like: overlap of content words approximated by Jaccard on token sets
+        A = set(tokens)
+        B = set(tokenize(expanded))
         inter = len(A & B)
         prec = inter / len(B) if B else 0.0
         rec = inter / len(A) if A else 0.0
-        f1 = (2 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
-        skill_score = (0.7 * f1) + (0.3 * jac)
+        sim_interests = (2 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
 
-        pubs_list = extract_publications(p)
-        pub_base, pub_hits, bonus = pubs_score(interest_tokens, pubs_list)
+        # Skill overlap score
+        student_skills = extract_skills(profile.skills or "")
+        jac, skill_hits = jaccard(student_skills, prof_skills)
+        # Convert overlap into precision/recall and F1
+        A2, B2 = set(student_skills), set(prof_skills)
+        inter2 = len(A2 & B2)
+        prec2 = inter2 / len(B2) if B2 else 0.0
+        rec2 = inter2 / len(A2) if A2 else 0.0
+        f1 = (2 * prec2 * rec2 / (prec2 + rec2)) if (prec2 + rec2) > 0 else 0.0
+        skill_score = clamp01(0.7 * f1 + 0.3 * jac)
 
-        # Collect phrase hits for interests (use multi-word phrases where applicable)
-        text_parts = [p.research_interests or ""]
-        for d in pubs_list:
-            text_parts += [(d.get("title") or ""), (d.get("abstract") or "")]
-        combined_text = norm_text(" ".join(text_parts))
-        phrase_hits: list[str] = []
-        for raw, nn in zip(interest_phrases_raw, interest_phrases_norm):
-            if nn and nn in combined_text:
-                phrase_hits.append(raw)
+        # Combine with weights
+        base = clamp01(w_interests * sim_interests + w_skills * skill_score)
 
-        base = (w_interests * sim_interests) + (w_skills * skill_score) + (w_pubs * pub_base)
+        # Small bonus for longer interest descriptions implying coverage
+        bonus = 1.0
+        if len(tokens) > 50:
+            bonus *= 1.05
+
         # synergy bonus when both interests and skills are strong
         synergy = 1.0
         if sim_interests >= 0.5 and skill_score >= 0.5:
@@ -558,18 +504,18 @@ def match_professors(
         final = clamp01(base * bonus * synergy)
 
         why = {
-            "interests_hits": phrase_hits[:6],
+            "interests_hits": [],
             "skills_hits": skill_hits[:6],
-            "pubs_hits": pub_hits[:6]
+            "pubs_hits": []
         }
         scored.append((final, len(skill_hits), -p.id, p, why))
 
     scored.sort(reverse=True, key=lambda x: (x[0], x[1], x[2]))
 
     # Preliminary selection before optional reranking
-    # Gate by positive baseline so reranker cannot introduce matches from pure noise
     prelim = [t for t in scored if t[0] > 0.0]
-    prelim = prelim[: (top_k or 100)] if prelim else []
+    # Cap prelim to reasonable size
+    prelim = prelim[:100] if prelim else []
 
     # Optional cross-encoder rerank of prelim set using concatenated doc text
     if RERANKER is not None and getattr(RERANKER, 'available', False) and prelim:
@@ -590,14 +536,11 @@ def match_professors(
         blended.sort(reverse=True, key=lambda x: (x[0], x[1], x[2]))
         prelim = blended
 
-    # Final selection honoring top_k if provided
-    if top_k is not None:
-        selected = prelim[:top_k]
-    else:
-        selected = [t for t in prelim if t[0] > 0.0]
+    # Final selection
+    selected = [t for t in prelim if t[0] > 0.0]
 
     # Fallback suggestions when nothing meaningful matches
-    if not selected and suggest_when_empty:
+    if not selected:
         suggestions: list[tuple[float, int, int, Any, dict]] = []
         student_skills = extract_skills(profile.skills or "")
         for p in profs:
@@ -619,8 +562,7 @@ def match_professors(
                 why = {"interests_hits": [], "skills_hits": [], "pubs_hits": []}
             suggestions.append((s, len(prof_skills), -p.id, p, why))
         suggestions.sort(reverse=True, key=lambda x: (x[0], x[1], x[2]))
-        cap = top_k or 10
-        selected = suggestions[:cap]
+        selected = suggestions[:10]
 
     matches = []
     for final, _, __, p, why in selected:
@@ -668,35 +610,21 @@ def email_send(
         raise HTTPException(422, "Invalid body content")
 
     # Attachment limit 5MB
-    attachment_bytes = None
-    if file_b64:
-        approx_size = int(len(file_b64) * 0.75)
-        if approx_size > 5 * 1024 * 1024:
-            raise HTTPException(413, "Attachment too large (max 5MB)")
+    MAX_ATTACH = 5 * 1024 * 1024
+    if filename and file_b64:
         try:
-            attachment_bytes = base64.b64decode(file_b64)
+            data = base64.b64decode(file_b64)
+            if len(data) > MAX_ATTACH:
+                raise HTTPException(413, "Attachment too large (max 5MB)")
         except Exception:
-            raise HTTPException(422, "Invalid attachment encoding")
+            raise HTTPException(400, "Invalid attachment encoding")
 
-    # Simple in-memory rate limit per user (10 emails / 10 minutes)
-    key = str(user.get("email") or user.get("sub") or "anon")
-    now = int(datetime.utcnow().timestamp())
-    window = 600
-    bucket = _EMAIL_SEND_EVENTS.get(key, [])
-    bucket = [t for t in bucket if (now - t) <= window]
-    if len(bucket) >= 10:
-        raise HTTPException(429, "Rate limit exceeded. Try later.")
-    bucket.append(now)
-    _EMAIL_SEND_EVENTS[key] = bucket
+    # Send (mock or real)
+    try:
+        send_email_with_attachment(to=to, subject=subject, body=body, filename=filename, file_b64=file_b64)
+    except Exception as e:
+        raise HTTPException(500, f"Failed to send email: {e}")
 
-    send_email_with_attachment(
-        to_email=to,
-        subject=subject,
-        body=body,
-        reply_to=str(user.get("email") or ""),
-        attachment_bytes=attachment_bytes,
-        attachment_filename=filename,
-    )
     return {"ok": True}
 
 

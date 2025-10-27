@@ -1,10 +1,3 @@
-export type Publication = {
-  title?: string;
-  abstract?: string;
-  year?: number;
-  link?: string;
-};
-
 export type Professor = {
   id: number;
   name: string;
@@ -15,7 +8,6 @@ export type Professor = {
   personal_site?: string;
   photo_url?: string;
   skills: string[];
-  recent_publications: Publication[];
 };
 
 export type StudentProfile = {
@@ -33,7 +25,6 @@ export type MatchItem = {
   why: {
     interests_hits: string[];
     skills_hits: string[];
-    pubs_hits: string[];
   };
   professor: Professor;
 };
@@ -44,7 +35,6 @@ export type MatchResult = Professor & {
   why?: {
     interests_hits: string[];
     skills_hits: string[];
-    pubs_hits: string[];
   };
 };
 

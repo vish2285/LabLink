@@ -44,51 +44,7 @@ export default function ProfessorDetail() {
     navigate('/email')
   }
 
-  function normalizePubLink(title?: string, raw?: string): string | undefined {
-    const t = (raw || '').trim()
-    const scholar = (q: string) => `https://scholar.google.com/scholar?q=${encodeURIComponent(q)}`
-    if (!t) return title ? scholar(title) : undefined
-
-    // DOI
-    if (/^10\.\d{4,9}\/.+/i.test(t)) return `https://doi.org/${t}`
-    const doiMatch = t.match(/^doi:\s*(10\.[^\s]+)/i)
-    if (doiMatch) return `https://doi.org/${doiMatch[1]}`
-
-    // arXiv
-    const arx1 = t.match(/^arxiv:\s*(\d{4}\.\d{4,5}(v\d+)?)/i)
-    if (arx1) return `https://arxiv.org/abs/${arx1[1]}`
-    if (/^\d{4}\.\d{4,5}(v\d+)?$/i.test(t)) return `https://arxiv.org/abs/${t}`
-
-    // Protocol-relative
-    if (t.startsWith('//')) return `https:${t}`
-
-    // Absolute URL
-    try {
-      const u = new URL(t)
-      return u.toString()
-    } catch {}
-
-    // Root-relative path: resolve against professor site if available
-    if (t.startsWith('/')) {
-      const base = professor?.profile_link
-      if (base) {
-        try {
-          const b = new URL(base)
-          return `${b.origin}${t}`
-        } catch {}
-      }
-      return title ? scholar(title) : undefined
-    }
-
-    // Try prefixing https:// and validate
-    try {
-      const u2 = new URL(`https://${t}`)
-      return u2.toString()
-    } catch {}
-
-    // Fallback
-    return scholar(title || t)
-  }
+  // Publications removed, so link normalization helper is no longer needed
 
   if (loading) {
     return (
@@ -148,32 +104,7 @@ export default function ProfessorDetail() {
             </div>
           ) : null}
 
-          {professor.recent_publications?.length ? (
-            <div className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-5">
-              <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Recent Publications</h2>
-              <ul className="space-y-4">
-                {professor.recent_publications.slice(0, 6).map((pub, i) => (
-                  <li key={i} className="border-b border-slate-200/60 dark:border-white/10 last:border-b-0 pb-4 last:pb-0">
-                    <div className="flex items-baseline justify-between gap-3">
-                      {normalizePubLink(pub.title, pub.link) ? (
-                        <a href={normalizePubLink(pub.title, pub.link)} target="_blank" rel="noopener noreferrer" className="font-medium text-slate-900 dark:text-white hover:underline">
-                          {pub.title || 'Untitled'}
-                        </a>
-                      ) : (
-                        <span className="font-medium text-slate-900 dark:text-white">{pub.title || 'Untitled'}</span>
-                      )}
-                      {typeof pub.year === 'number' && (
-                        <span className="text-xs text-slate-600 dark:text-slate-400">{pub.year}</span>
-                      )}
-                    </div>
-                    {pub.abstract && (
-                      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300 line-clamp-3">{pub.abstract}</p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+          {/* Publications removed */}
         </div>
 
         <aside className="space-y-4">

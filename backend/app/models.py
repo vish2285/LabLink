@@ -13,25 +13,12 @@ class Professor(Base):
     profile_link: Mapped[str | None] = mapped_column(String(512))
     photo_url: Mapped[str | None] = mapped_column(String(512), default="")
     personal_site: Mapped[str | None] = mapped_column(String(512))
-    recent_publications: Mapped[str | None] = mapped_column(Text, default="[]")  # JSON string for backward compatibility
-
-    publications: Mapped[list["Publication"]] = relationship(
-        back_populates="professor", cascade="all, delete-orphan"
-    )
+    # recent_publications removed
     professor_skills: Mapped[list["ProfessorSkill"]] = relationship(
         back_populates="professor", cascade="all, delete-orphan"
     )
 
-class Publication(Base):
-    __tablename__ = "publications"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    professor_id: Mapped[int] = mapped_column(ForeignKey("professors.id", ondelete="CASCADE"), index=True)
-    title: Mapped[str | None] = mapped_column(Text)
-    abstract: Mapped[str | None] = mapped_column(Text)
-    year: Mapped[int | None] = mapped_column(Integer, index=True)  # Add index for year filtering
-    link: Mapped[str | None] = mapped_column(String(512))
-
-    professor: Mapped["Professor"] = relationship(back_populates="publications")
+# Publication model removed
 
 class Skill(Base):
     __tablename__ = "skills"

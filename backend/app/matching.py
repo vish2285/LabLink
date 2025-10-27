@@ -77,14 +77,11 @@ def jaccard(a: List[str], b: List[str]) -> Tuple[float, List[str]]:
     return len(inter)/len(union), sorted(list(inter))
 
 def year_from_pub(d: Dict[str, Any]) -> int | None:
-    try:
-        return int(d.get("year")) if d.get("year") is not None else None
-    except: return None
+    # Publications removed; keep stub for compatibility
+    return None
 
 def prof_to_doc(p: Dict[str, Any]) -> str:
     parts = [p.get("research_interests", "")]
-    for d in p.get("recent_publications", []):
-        parts += [d.get("title") or "", d.get("abstract") or ""]
     if p.get("skills"):
         parts.append(" ".join(p["skills"]))
     return norm_text(" ".join(parts).strip())
@@ -294,20 +291,5 @@ class CrossEncoderReranker:
             return [0.0 for _ in docs]
 
 def pubs_score(interests_tokens: List[str], pubs: List[Dict[str, Any]]) -> Tuple[float, List[str], float]:
-    if not pubs or not interests_tokens: return 0.0, [], 1.0
-    this_year = datetime.utcnow().year
-    hits, total_hits, bonus = [], 0, 1.0
-    for d in pubs:
-        text = norm_text((d.get("title") or "") + " " + (d.get("abstract") or ""))
-        local = False
-        for kw in interests_tokens:
-            if kw and kw in text:
-                hits.append(kw); total_hits += 1; local = True
-        if local:
-            y = year_from_pub(d)
-            if y is not None:
-                age = this_year - y
-                if age <= 3: bonus = max(bonus, 1.05)
-                elif age <= 5: bonus = max(bonus, 1.02)
-    base = min(total_hits, 3) / 3.0
-    return base, sorted(list(set(hits))), bonus
+    # Publications removed; always return zeros/neutral
+    return 0.0, [], 1.0
