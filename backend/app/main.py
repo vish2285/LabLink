@@ -33,6 +33,9 @@ import base64
 from urllib.parse import urljoin
 from datetime import datetime, timedelta
 from typing import Optional, Any
+from fastapi.responses import RedirectResponse
+from urllib.parse import urlencode
+import secrets
 
 # Load environment from .env (for SMTP, etc.)
 load_dotenv()
@@ -96,6 +99,7 @@ and enforce @ucdavis.edu domain.
 
 security = HTTPBearer(auto_error=False)
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
 # ---- Session cookie config ----
 SESSION_COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "lablink_session")
@@ -308,6 +312,136 @@ def startup():
         # Load personal_site map from JSON for API responses
         load_personal_sites_from_json()
 
+@app.get("/api/reload_docs")
+def reload_docs(db: Session = Depends(get_db)):
+    rebuild_vectorstore(db)
+    return {"ok": True, "count": len(PROF_IDS)}
+
+# ---- Classic OAuth (Authorization Code) flow ----
+@app.get("/api/oauth/start")
+def oauth_start(request: Request, returnTo: Optional[str] = "/"):
+    if not (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET):
+        raise HTTPException(500, "Server misconfigured: missing Google OAuth credentials")
+    redirect_uri = str(request.url_for("oauth_callback"))
+    state = secrets.token_urlsafe(32)
+    scopes = [
+        "openid",
+        "email",
+        "profile",
+        # Include Gmail scopes to display the full consent screen
+        "https://www.googleapis.com/auth/gmail.send",
+        "https://www.googleapis.com/auth/gmail.readonly",
+    ]
+    params = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": " ".join(scopes),
+        "access_type": "offline",
+        "include_granted_scopes": "false",
+        "prompt": "consent select_account",
+        "state": state,
+    }
+    if ALLOWED_EMAIL_DOMAINS:
+        params["hd"] = sorted(ALLOWED_EMAIL_DOMAINS)[0]
+    url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
+    resp = RedirectResponse(url)
+    # Store state and return path in short-lived cookies
+    resp.set_cookie("oauth_state", state, max_age=600, httponly=True, secure=COOKIE_SECURE, samesite="lax", domain=COOKIE_DOMAIN, path="/")
+    # Allow absolute returnTo only if it matches an allowed origin; else allow app-relative path
+    safe_return = "/"
+    try:
+        if isinstance(returnTo, str) and returnTo:
+            if returnTo.startswith("http://") or returnTo.startswith("https://"):
+                allowed = {o.strip().rstrip('/') for o in ALLOWED_ORIGINS if o.strip()}
+                # extract origin
+                from urllib.parse import urlsplit
+                rt = urlsplit(returnTo)
+                origin = f"{rt.scheme}://{rt.netloc}"
+                if origin in allowed:
+                    safe_return = returnTo
+            elif returnTo.startswith("/"):
+                safe_return = returnTo
+    except Exception:
+        safe_return = "/"
+    resp.set_cookie("oauth_return", safe_return, max_age=600, httponly=True, secure=COOKIE_SECURE, samesite="lax", domain=COOKIE_DOMAIN, path="/")
+    return resp
+
+# ---- Cookie helper ----
+
+def set_session_cookie(resp: Response | RedirectResponse, token: str) -> None:
+    try:
+        expires = datetime.utcnow() + timedelta(seconds=SESSION_TTL_SECONDS)
+        resp.set_cookie(
+            key=SESSION_COOKIE_NAME,
+            value=token,
+            httponly=True,
+            secure=COOKIE_SECURE,
+            samesite="none" if COOKIE_SAMESITE == "none" else ("strict" if COOKIE_SAMESITE == "strict" else "lax"),
+            domain=COOKIE_DOMAIN,
+            expires=expires.strftime("%a, %d %b %Y %H:%M:%S GMT"),
+            path="/",
+        )
+    except Exception:
+        pass
+
+@app.get("/api/oauth/callback")
+async def oauth_callback(request: Request, response: Response, code: Optional[str] = None, state: Optional[str] = None, error: Optional[str] = None, db: Session = Depends(get_db)):
+    if error:
+        raise HTTPException(400, f"OAuth error: {error}")
+    if not code:
+        raise HTTPException(400, "Missing authorization code")
+    # Validate state
+    cookie_state = request.cookies.get("oauth_state")
+    if not cookie_state or cookie_state != (state or ""):
+        raise HTTPException(400, "Invalid OAuth state")
+    # Exchange code for tokens (async)
+    redirect_uri = str(request.url_for("oauth_callback"))
+    data = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "client_secret": GOOGLE_CLIENT_SECRET,
+        "code": code,
+        "grant_type": "authorization_code",
+        "redirect_uri": redirect_uri,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            token_res = await client.post("https://oauth2.googleapis.com/token", data=data)
+        token_res.raise_for_status()
+        payload = token_res.json()
+        id_token = payload.get("id_token")
+        if not id_token:
+            raise HTTPException(400, "Missing id_token in token response")
+        claims = verify_google_token(id_token)
+        email = str(claims.get("email") or "")
+        sub = str(claims.get("sub") or "")
+        name = claims.get("name")
+        picture = claims.get("picture")
+        if not (email and sub):
+            raise HTTPException(401, "Invalid token claims")
+        domain = email.split("@", 1)[-1].lower() if "@" in email else None
+        hd = str(claims.get("hd") or "").lower() or None
+        allowed = set(ALLOWED_EMAIL_DOMAINS)
+        if (domain not in allowed) and (hd not in allowed):
+            raise HTTPException(403, "Email domain not allowed")
+        user = crud.get_or_create_user_by_sub(db, sub, email=email, name=name, picture=picture)
+        sess = crud.create_session(db, user, ttl_seconds=SESSION_TTL_SECONDS)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"OAuth token exchange failed: {e}")
+    # Redirect back to app
+    ret = request.cookies.get("oauth_return") or "/"
+    r = RedirectResponse(ret)
+    set_session_cookie(r, sess.token)
+    # Clear temporary cookies
+    try:
+        r.delete_cookie("oauth_state", domain=COOKIE_DOMAIN, path="/")
+        r.delete_cookie("oauth_return", domain=COOKIE_DOMAIN, path="/")
+    except Exception:
+        pass
+    return r
+
 # ---- Helpers ----
 def clamp01(x: float) -> float: return max(0.0, min(1.0, x))
 def pct(x: float) -> float: return round(clamp01(x) * 100.0, 2)
@@ -417,6 +551,23 @@ def auth_logout(response: Response, db: Session = Depends(get_db), session_token
     )
     return {"ok": True}
 
+@app.post("/api/auth/refresh")
+def auth_refresh(response: Response, db: Session = Depends(get_db), session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME)):
+    if not session_token:
+        raise HTTPException(401, "Missing session")
+    sess = crud.get_session(db, session_token)
+    if not sess:
+        raise HTTPException(401, "Invalid or expired session")
+    # extend and reissue cookie
+    try:
+        crud.touch_session(db, sess, ttl_seconds=SESSION_TTL_SECONDS)
+    except Exception:
+        pass
+    # respond with refreshed cookie
+    r = Response(content=json.dumps({"ok": True}), media_type="application/json")
+    set_session_cookie(r, sess.token)
+    return r
+
 @app.get("/api/auth/me")
 def auth_me(user: dict = Depends(get_current_user)):
     # Accept either cookie session or Bearer token (handled in get_current_user)
@@ -437,11 +588,6 @@ def get_professor(professor_id: int, db: Session = Depends(get_db)):
 def list_departments(db: Session = Depends(get_db)):
     deps = crud.list_departments(db)
     return deps
-
-@app.get("/api/reload_docs")
-def reload_docs(db: Session = Depends(get_db)):
-    rebuild_vectorstore(db)
-    return {"ok": True, "count": len(PROF_IDS)}
 
 # ---- Matching endpoints ----
 @app.post("/api/match", response_model=MatchResponse)
@@ -601,6 +747,17 @@ def email_send(
     file_b64: str | None = Body(None, embed=True),
     user: dict = Depends(require_ucdavis_user),
 ):
+    # simple rate limit per user/email for send: 3/min
+    key = f"email:{str(user.get('email') or user.get('sub') or 'anon')}"
+    now = int(datetime.utcnow().timestamp())
+    window = 60
+    bucket = _EMAIL_SEND_EVENTS.get(key, [])
+    bucket = [t for t in bucket if (now - t) <= window]
+    if len(bucket) >= 3:
+        raise HTTPException(429, "Too many emails. Try again in a minute.")
+    bucket.append(now)
+    _EMAIL_SEND_EVENTS[key] = bucket
+
     # Validate basic fields
     if not to or not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", to):
         raise HTTPException(422, "Invalid recipient email")
