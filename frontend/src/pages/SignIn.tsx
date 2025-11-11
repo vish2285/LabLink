@@ -26,7 +26,8 @@ export default function SignIn() {
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
-      <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 shadow-md p-8 text-center">
+      <div className="w-full max-w-lg rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-md overflow-hidden">
+        <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-8 text-center h-full">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Sign in</h1>
         <p className="mt-1 text-slate-600 dark:text-slate-300">Use your UC Davis Google account to continue</p>
 
@@ -50,6 +51,7 @@ export default function SignIn() {
 
         <div className="mt-5 text-sm text-slate-600 dark:text-slate-300">
           <p>Only <span className="font-mono">@ucdavis.edu</span> emails are allowed.</p>
+        </div>
         </div>
       </div>
     </div>

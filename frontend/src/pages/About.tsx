@@ -10,36 +10,44 @@ export default function About() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <section className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6">
+        <section className="rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden">
+          <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-6 h-full">
           <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">What it does</h2>
           <p className="text-sm leading-relaxed">
             LabLink analyzes your interests and skills, compares them to faculty interests and recent publications,
             and surfaces professors who are most aligned. It also drafts a professional outreach email that you can edit and send.
           </p>
+          </div>
         </section>
 
-        <section className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6">
+        <section className="rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden">
+          <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-6 h-full">
           <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">How it works</h2>
           <ol className="text-sm space-y-2 list-decimal list-inside">
             <li>Create your profile with interests, skills, and optional department.</li>
             <li>Browse your top matches and see why each professor aligns.</li>
             <li>Open the email editor to generate and send a tailored message.</li>
           </ol>
+          </div>
         </section>
 
-        <section className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6">
+        <section className="rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden">
+          <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-6 h-full">
           <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Privacy</h2>
           <p className="text-sm leading-relaxed">
             Your profile is used only to compute matches and draft emails on your device and our API. No data is sold or shared.
           </p>
+          </div>
         </section>
 
-        <section className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6">
+        <section className="rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden">
+          <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-6 h-full">
           <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Get started</h2>
           <p className="text-sm leading-relaxed mb-4">It takes less than a minute to see your first matches.</p>
           <Button asChild>
             <a href="/profile">Create your profile</a>
           </Button>
+          </div>
         </section>
       </div>
 

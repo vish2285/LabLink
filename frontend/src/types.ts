@@ -17,6 +17,7 @@ export type StudentProfile = {
   skills?: string;
   availability?: string;
   department?: string;
+  level?: 'undergraduate' | 'graduate';
 };
 
 export type MatchItem = {

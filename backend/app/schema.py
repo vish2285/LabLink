@@ -70,6 +70,17 @@ class EmailRequest(BaseModel):
     professor_email: Optional[str] = ""
     paper_title: Optional[str] = ""
     topic: Optional[str] = ""
+    student_level: Optional[str] = Field(default=None, description="'undergraduate' or 'graduate'")
+
+    @field_validator('student_level')
+    @classmethod
+    def validate_level(cls, v):
+        if v is None or v == "":
+            return None
+        lv = str(v).strip().lower()
+        if lv not in {"undergraduate", "graduate"}:
+            raise ValueError("student_level must be 'undergraduate' or 'graduate'")
+        return lv
 
 class EmailDraft(BaseModel):
     subject: str

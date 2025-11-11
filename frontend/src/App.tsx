@@ -24,9 +24,10 @@ function App() {
   }, [])
   return (
     <BrowserRouter>
-      <div className={`min-h-screen flex flex-col ${theme === 'dark' ? 'text-slate-100 bg-gradient-to-b from-[#0b1220] via-[#0a0f1a] to-[#05080f]' : 'text-slate-900 bg-white'}`}>
+      <div className={`min-h-screen flex flex-col ${theme === 'dark' ? 'text-slate-100 bg-slate-900' : 'text-slate-900 bg-white'}`}>
         <Header />
-        <main className="w-full px-4 md:px-8 py-8 flex-1">
+        {/* Add padding-top to avoid overlap with fixed header */}
+        <main className="w-full px-4 md:px-8 pt-24 md:pt-20 pb-8 flex-1">
           <ErrorBoundary>
             <Routes>
               <Route path="/" element={<Landing />} />

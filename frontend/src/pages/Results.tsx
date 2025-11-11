@@ -78,7 +78,7 @@ export default function Results() {
   if (!results?.length) return <EmptyState />
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
       {/* Header */}
       <motion.div
         className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 pb-6"
@@ -172,9 +172,8 @@ export default function Results() {
           {results.length > 3 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-px flex-1 bg-slate-300/60 dark:bg-white/10" />
+                {/* Removed heavy separators to avoid page border feel */}
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">More Matches</span>
-                <div className="h-px flex-1 bg-slate-300/60 dark:bg-white/10" />
               </div>
               <AnimatePresence mode="sync">
                 <motion.div

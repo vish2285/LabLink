@@ -71,7 +71,8 @@ export default function ProfessorDetail() {
         </nav>
       </div>
 
-      <header className="mb-6 relative overflow-hidden rounded-2xl border border-slate-300/60 dark:border-white/10 bg-white/80 dark:bg-white/5 p-5 shadow-sm smooth">
+      <header className="mb-6 rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden">
+        <div className="relative overflow-hidden rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-5 smooth h-full">
         <div className="pointer-events-none absolute -inset-1 opacity-60" style={{ background:
           'radial-gradient(600px 160px at 0% 0%, rgba(124,196,255,0.18), rgba(124,196,255,0) 40%), radial-gradient(600px 160px at 100% 0%, rgba(255,191,0,0.15), rgba(255,191,0,0) 40%)'
         }} />
@@ -86,21 +87,26 @@ export default function ProfessorDetail() {
             )}
           </div>
         </div>
+        </div>
       </header>
 
       <section className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           {professor.research_interests && (
-            <div className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-5">
+            <div className="rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden">
+              <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-5 h-full">
               <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Research Interests</h2>
               <p className="text-slate-800 dark:text-slate-200 leading-relaxed">{professor.research_interests}</p>
+              </div>
             </div>
           )}
 
           {professor.skills?.length ? (
-            <div className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-5">
+            <div className="rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden">
+              <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-5 h-full">
               <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Skills</h2>
               <TagList items={professor.skills} max={24} />
+              </div>
             </div>
           ) : null}
 
@@ -108,7 +114,8 @@ export default function ProfessorDetail() {
         </div>
 
         <aside className="space-y-4">
-          <div className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-5">
+          <div className="rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden">
+            <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-5 h-full">
             <h3 className="mb-3 text-base font-semibold text-slate-900 dark:text-white">Profile</h3>
             <div className="space-y-2 text-sm text-slate-800 dark:text-slate-200">
               {professor.email && (
@@ -125,15 +132,15 @@ export default function ProfessorDetail() {
                   href={professor.profile_link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-md border border-slate-300/60 dark:border-white/20 px-3 py-1.5 text-xs font-medium hover:bg-slate-900/5 dark:hover:bg-white/10 whitespace-nowrap"
+                  className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-300/70 dark:border-white/20 bg-white/80 dark:bg-white/5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors whitespace-nowrap"
                 >
-                  UC Davis Page
-                  <FiExternalLink className="ml-1 h-3 w-3 opacity-80" />
+                  UC Davis
+                  <FiExternalLink className="h-3 w-3" />
                 </a>
               ) : (
-                <button className="inline-flex items-center justify-center rounded-md border border-slate-300/60 dark:border-white/20 px-3 py-1.5 text-xs font-medium opacity-60 cursor-not-allowed whitespace-nowrap">
-                  UC Davis Page
-                  <FiExternalLink className="ml-1 h-3 w-3 opacity-60" />
+                <button className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-300/70 dark:border-white/20 bg-white/40 dark:bg-white/5 px-3 py-2 text-xs font-medium text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed whitespace-nowrap">
+                  UC Davis
+                  <FiExternalLink className="h-3 w-3" />
                 </button>
               )}
               {professor.personal_site ? (
@@ -141,26 +148,27 @@ export default function ProfessorDetail() {
                   href={professor.personal_site}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-md border border-slate-300/60 dark:border-white/20 px-3 py-1.5 text-xs font-medium hover:bg-slate-900/5 dark:hover:bg-white/10 whitespace-nowrap"
+                  className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-300/70 dark:border-white/20 bg-white/80 dark:bg-white/5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors whitespace-nowrap"
                 >
-                  Personal Site
-                  <FiExternalLink className="ml-1 h-3 w-3 opacity-80" />
+                  Website
+                  <FiExternalLink className="h-3 w-3" />
                 </a>
               ) : (
-                <button className="inline-flex items-center justify-center rounded-md border border-slate-300/60 dark:border-white/20 px-3 py-1.5 text-xs font-medium opacity-60 cursor-not-allowed whitespace-nowrap">
-                  Personal Site
-                  <FiExternalLink className="ml-1 h-3 w-3 opacity-60" />
+                <button className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-300/70 dark:border-white/20 bg-white/40 dark:bg-white/5 px-3 py-2 text-xs font-medium text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed whitespace-nowrap">
+                  Website
+                  <FiExternalLink className="h-3 w-3" />
                 </button>
               )}
             </div>
             <div className="mt-3">
               <button
                 onClick={handleConnect}
-                className="inline-flex items-center justify-center rounded-md bg-[#1e3a8a] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#2544a0] whitespace-nowrap"
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-indigo-600 to-blue-600 dark:from-indigo-500 dark:to-blue-500 px-3 py-2 text-xs font-medium text-white hover:from-indigo-700 hover:to-blue-700 dark:hover:from-indigo-600 dark:hover:to-blue-600 shadow-sm transition-all"
               >
-                <FiMail className="mr-1 h-3 w-3 text-white/90" />
+                <FiMail className="h-3.5 w-3.5" />
                 Draft Email
               </button>
+            </div>
             </div>
           </div>
         </aside>

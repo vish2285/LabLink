@@ -4,7 +4,8 @@ from email.message import EmailMessage
 
 
 def build_email(student_name: str, student_skills: str | None, availability: str | None,
-               professor_name: str, paper_title: str | None, topic: str | None) -> dict:
+               professor_name: str, paper_title: str | None, topic: str | None,
+               student_level: str | None = None) -> dict:
    last = (professor_name or "Professor").split()[-1]
    def infer_topic():
        if (paper_title or "").strip(): return paper_title.strip()
@@ -12,15 +13,26 @@ def build_email(student_name: str, student_skills: str | None, availability: str
        toks = extract_skills(student_skills or "")
        return toks[0] if toks else "your research"
 
+   level = (student_level or "student").strip().lower()
+   if level not in {"undergraduate", "graduate", "student"}: level = "student"
 
    t = infer_topic()
-   subject = "Undergraduate Seeking Research Assistant Position"
+   if level == "graduate":
+       subject = "Graduate Student Interested in Research Collaboration"
+       level_phrase = "a graduate student"
+   elif level == "undergraduate":
+       subject = "Undergraduate Seeking Research Assistant Position"
+       level_phrase = "an undergraduate"
+   else:
+       subject = "Student Interested in Research Opportunities"
+       level_phrase = "a student"
+
    paper_line = f' I recently read your paper "{paper_title}".' if paper_title else ""
    skills = student_skills or "relevant skills"
    avail = availability or "this quarter"
    body = (
        f"Dear Dr. {last},\n\n"
-       f"My name is {student_name}, and I am an [undergraduate or graduate] at UC Davis interested in your work on {t}.{paper_line} "
+       f"My name is {student_name}, and I am {level_phrase} at UC Davis interested in your work on {t}.{paper_line} "
        f"I would be eager to contribute to your research and apply my experience in {skills}. "
        f"I am available to start {avail} and would greatly appreciate the opportunity to discuss how I could support your lab.\n\n"
        f"I have attached my resume for your reference.\n"

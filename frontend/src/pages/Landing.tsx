@@ -44,43 +44,49 @@ export default function Landing() {
         >
           <div className="grid gap-6 md:grid-cols-3">
             <motion.div
-              className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6 text-left"
+              className="rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05, duration: 0.45 }}
               viewport={{ once: true, amount: 0.3 }}
             >
+              <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-6 text-left h-full">
               <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#1e3a8a] text-white">
                 <FiUserPlus className="h-5 w-5" />
               </div>
               <h3 className="text-slate-900 dark:text-white font-semibold mb-1">Create your profile</h3>
               <p className="text-slate-700 dark:text-slate-300 text-sm">Add your interests, skills, and optionally a department to personalize matches.</p>
+              </div>
             </motion.div>
             <motion.div
-              className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6 text-left"
+              className="rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.45 }}
               viewport={{ once: true, amount: 0.3 }}
             >
+              <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-6 text-left h-full">
               <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#1e3a8a] text-white">
                 <FiSearch className="h-5 w-5" />
               </div>
               <h3 className="text-slate-900 dark:text-white font-semibold mb-1">See top matches</h3>
               <p className="text-slate-700 dark:text-slate-300 text-sm">We analyze interests, skills, and publications to surface aligned professors.</p>
+              </div>
             </motion.div>
             <motion.div
-              className="rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6 text-left"
+              className="rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25, duration: 0.45 }}
               viewport={{ once: true, amount: 0.3 }}
             >
+              <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-6 text-left h-full">
               <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#1e3a8a] text-white">
                 <FiMail className="h-5 w-5" />
               </div>
               <h3 className="text-slate-900 dark:text-white font-semibold mb-1">Draft and send</h3>
               <p className="text-slate-700 dark:text-slate-300 text-sm">Open the email editor to generate a tailored outreach email and send it.</p>
+              </div>
             </motion.div>
           </div>
         </motion.div>

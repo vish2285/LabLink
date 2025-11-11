@@ -30,7 +30,8 @@ export default function Feedback() {
       {sent ? (
         <p className="text-slate-700 dark:text-slate-300">Thanks! Your feedback was sent.</p>
       ) : (
-        <form onSubmit={submit} className="mx-auto rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6 space-y-4 text-left">
+        <div className="mx-auto rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden">
+        <form onSubmit={submit} className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur border border-slate-200/60 dark:border-white/10 p-6 space-y-4 text-left h-full">
           <div>
             <label className="block text-sm mb-1 text-slate-700 dark:text-slate-300">Email (optional)</label>
             <input className="w-full rounded-md border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@ucdavis.edu" />
@@ -44,6 +45,7 @@ export default function Feedback() {
             <Button type="submit">Send Feedback</Button>
           </div>
         </form>
+        </div>
       )}
     </div>
   )

@@ -32,6 +32,7 @@ export default function EmailEditor() {
         professor_name: selectedProfessor.name,
         professor_email: selectedProfessor.email || '',
         topic: profile.interests || '',
+        student_level: profile.level || undefined,
       })
       const subj = email.subject || ''
       setSubjectText(subj)
@@ -52,7 +53,8 @@ export default function EmailEditor() {
           Back to Matches
         </Link>
       </div>
-      <div className="mx-auto w-full max-w-3xl rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-4 sm:p-6 shadow-sm text-slate-900 dark:text-slate-100">
+      <div className="mx-auto w-full max-w-3xl rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden">
+        <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur p-4 sm:p-6 border border-slate-200/60 dark:border-white/10 text-slate-900 dark:text-slate-100 h-full">
         {!selectedProfessor && (
           <p className="text-sm text-slate-700 dark:text-slate-300">No professor selected. <Link to="/matches" className="text-blue-700 dark:text-[#7cc4ff] underline">Go to matches</Link></p>
         )}
@@ -103,7 +105,7 @@ export default function EmailEditor() {
                 </>
               )}
             </Button>
-            <label className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-white/5 dark:text-slate-200 px-4 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition w-full sm:w-auto">
+            <label className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-lg border border-slate-300/70 dark:border-white/20 bg-white/80 dark:bg-white/5 text-slate-700 dark:text-slate-200 px-4 text-sm font-medium cursor-pointer hover:bg-slate-50 dark:hover:bg-white/10 transition-colors w-full sm:w-auto">
               <input type="file" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
               <FiPaperclip className="h-4 w-4" />
               <span className="truncate max-w-[12rem]">{file ? file.name : 'Attach CV/Resume'}</span>
@@ -140,19 +142,18 @@ export default function EmailEditor() {
               Send Email
             </Button>
             <a
-              className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-md border border-slate-300/60 dark:border-white/20 bg-white text-slate-900 dark:bg-white/5 dark:text-slate-200 px-4 text-sm hover:bg-slate-100 dark:hover:bg-white/10 transition"
+              className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-lg border border-slate-300/70 dark:border-white/20 bg-white/80 dark:bg-white/5 text-slate-700 dark:text-slate-200 px-4 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
               href={`https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${encodeURIComponent(selectedProfessor?.email || '')}&su=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(body)}${user?.email ? `&authuser=${encodeURIComponent(user.email)}` : ''}`}
               target="_blank"
               rel="noopener noreferrer"
             >
               <FiExternalLink className="h-4 w-4" />
-              Open in Mail
+              Open in Gmail
             </a>
           </div>
+        </div>
         </div>
       </div>
     </div>
   )
 }
-
-

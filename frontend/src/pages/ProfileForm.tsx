@@ -20,6 +20,7 @@ export default function ProfileForm() {
   const [interestInput, setInterestInput] = useState('')
   const [skillInput, setSkillInput] = useState('')
   const [department, setDepartment] = useState(profile?.department || '')
+  const [level, setLevel] = useState<'undergraduate' | 'graduate' | ''>((profile?.level as any) || '')
   const [loading, setLoading] = useState(false)
   const [loadingDepartments, setLoadingDepartments] = useState(!departments.length)
   const [error, setError] = useState<string | null>(null)
@@ -33,10 +34,11 @@ export default function ProfileForm() {
     try {
       const raw = typeof window !== 'undefined' ? window.localStorage.getItem('app_profile') : null
       if (raw) {
-        const saved = JSON.parse(raw) as { interests?: string; skills?: string; department?: string }
+        const saved = JSON.parse(raw) as { interests?: string; skills?: string; department?: string; level?: 'undergraduate' | 'graduate' }
         if (saved?.interests) setInterestsList(saved.interests.split(',').map(s => s.trim()).filter(Boolean))
         if (saved?.skills) setSkillsList(saved.skills.split(',').map(s => s.trim()).filter(Boolean))
         if (saved?.department) setDepartment(saved.department)
+        if (saved?.level) setLevel(saved.level)
       }
     } catch {}
 
@@ -90,13 +92,14 @@ export default function ProfileForm() {
       const draft = {
         interests: interestsList.join(', '),
         skills: skillsList.join(', '),
-        department: department || ''
+        department: department || '',
+        level: level || ''
       }
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('app_profile', JSON.stringify(draft))
       }
     } catch {}
-  }, [interestsList, skillsList, department])
+  }, [interestsList, skillsList, department, level])
 
   // Cycle animated example hints while fields are empty
   useEffect(() => {
@@ -122,9 +125,10 @@ export default function ProfileForm() {
         interests: interestsList.join(', '),
         skills: skillsList.join(', '),
         department: department || undefined,
+        level: level || undefined,
       }
-      setProfile(payload)
-      const results = await matchProfessors(payload, department || undefined)
+      setProfile(payload as any)
+      const results = await matchProfessors(payload as any, department || undefined)
       setResults(results)
       navigate('/matches')
     } catch (err: any) {
@@ -139,7 +143,8 @@ export default function ProfileForm() {
 
   return (
     <div className="space-y-6 px-4 sm:px-6 lg:px-8" id="profile">
-      <div className="mx-auto w-full max-w-3xl rounded-xl border border-slate-300/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-4 sm:p-6 shadow-sm text-center text-slate-900 dark:text-slate-100">
+      <div className="mx-auto w-full max-w-3xl rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/20 to-sky-400/10 shadow-sm overflow-hidden">
+        <div className="rounded-2xl bg-white/85 dark:bg-slate-900/60 backdrop-blur p-4 sm:p-6 border border-slate-200/60 dark:border-white/10 text-center text-slate-900 dark:text-slate-100 h-full">
         <h1 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white">Your Research Profile</h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Add interests and skills to find matching UC Davis professors.</p>
         <form onSubmit={onSubmit} className="mt-5 grid gap-4 sm:gap-5 justify-items-center">
@@ -161,6 +166,18 @@ export default function ProfileForm() {
                 ))}
               </select>
             )}
+          </div>
+          <div className="w-full max-w-md">
+            <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Student level</label>
+            <select
+              className="mt-1 w-full rounded-lg border border-slate-300/60 dark:border-white/20 px-3 py-2 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+              value={level}
+              onChange={e => setLevel(e.target.value as any)}
+            >
+              <option value="" disabled>Select level</option>
+              <option value="undergraduate">Undergraduate</option>
+              <option value="graduate">Graduate</option>
+            </select>
           </div>
           <div className="w-full max-w-md">
             <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">Interests</label>
@@ -278,6 +295,7 @@ export default function ProfileForm() {
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   )

@@ -73,6 +73,7 @@ export async function generateEmail(request: {
   professor_email?: string;
   paper_title?: string;
   topic?: string;
+  student_level?: 'undergraduate' | 'graduate';
 }): Promise<{ subject: string; body: string }> {
   const res = await authorizedFetch(`${API_BASE}/api/email/generate`, {
     method: 'POST',

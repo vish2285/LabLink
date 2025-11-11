@@ -649,8 +649,10 @@ def match_professors(
             synergy *= 0.85
         final = clamp01(base * bonus * synergy)
 
+        # explanatory hits
+        interest_hits = sorted(list(A & B))[:6]
         why = {
-            "interests_hits": [],
+            "interests_hits": interest_hits,
             "skills_hits": skill_hits[:6],
             "pubs_hits": []
         }
@@ -705,7 +707,9 @@ def match_professors(
                 # Otherwise suggest by general coverage of interests text length
                 tokens = tokenize(p.research_interests or "")
                 s = clamp01(min(len(tokens) / 50.0, 1.0))
-                why = {"interests_hits": [], "skills_hits": [], "pubs_hits": []}
+                # show top two frequent-ish tokens to give context
+                hits = sorted(list(set(tokens)))[:2]
+                why = {"interests_hits": hits, "skills_hits": [], "pubs_hits": []}
             suggestions.append((s, len(prof_skills), -p.id, p, why))
         suggestions.sort(reverse=True, key=lambda x: (x[0], x[1], x[2]))
         selected = suggestions[:10]
@@ -734,7 +738,8 @@ def email_generate(req: EmailRequest, user: dict = Depends(require_ucdavis_user)
         availability=req.availability,
         professor_name=req.professor_name,
         paper_title=req.paper_title,
-        topic=req.topic
+        topic=req.topic,
+        student_level=req.student_level,
     )
     return EmailDraft(**draft)
 
