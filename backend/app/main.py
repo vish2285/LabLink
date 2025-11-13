@@ -322,7 +322,17 @@ def reload_docs(db: Session = Depends(get_db)):
 def oauth_start(request: Request, returnTo: Optional[str] = "/"):
     if not (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET):
         raise HTTPException(500, "Server misconfigured: missing Google OAuth credentials")
-    redirect_uri = str(request.url_for("oauth_callback"))
+    # Build redirect_uri and normalize scheme using X-Forwarded-Proto if present
+    try:
+        from starlette.datastructures import URL  # local import to avoid global dependency if unused
+        raw_redirect = str(request.url_for("oauth_callback"))
+        redirect_url = URL(raw_redirect)
+        fproto = (request.headers.get("x-forwarded-proto") or "").lower()
+        if fproto in {"http", "https"} and redirect_url.scheme != fproto:
+            redirect_url = redirect_url.replace(scheme=fproto)
+        redirect_uri = str(redirect_url)
+    except Exception:
+        redirect_uri = str(request.url_for("oauth_callback"))
     state = secrets.token_urlsafe(32)
     scopes = [
         "openid",
@@ -396,7 +406,17 @@ async def oauth_callback(request: Request, response: Response, code: Optional[st
     if not cookie_state or cookie_state != (state or ""):
         raise HTTPException(400, "Invalid OAuth state")
     # Exchange code for tokens (async)
-    redirect_uri = str(request.url_for("oauth_callback"))
+    # Build redirect_uri and normalize scheme using X-Forwarded-Proto if present
+    try:
+        from starlette.datastructures import URL  # local import to avoid global dependency if unused
+        raw_redirect = str(request.url_for("oauth_callback"))
+        redirect_url = URL(raw_redirect)
+        fproto = (request.headers.get("x-forwarded-proto") or "").lower()
+        if fproto in {"http", "https"} and redirect_url.scheme != fproto:
+            redirect_url = redirect_url.replace(scheme=fproto)
+        redirect_uri = str(redirect_url)
+    except Exception:
+        redirect_uri = str(request.url_for("oauth_callback"))
     data = {
         "client_id": GOOGLE_CLIENT_ID,
         "client_secret": GOOGLE_CLIENT_SECRET,
