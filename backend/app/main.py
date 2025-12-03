@@ -317,20 +317,33 @@ def reload_docs(db: Session = Depends(get_db)):
     rebuild_vectorstore(db)
     return {"ok": True, "count": len(PROF_IDS)}
 
+# ---- Helper to build OAuth redirect_uri respecting proxy headers ----
+def build_oauth_redirect_uri(request: Request) -> str:
+    """Build redirect_uri for OAuth, respecting X-Forwarded-Host and X-Forwarded-Proto from proxies."""
+    from starlette.datastructures import URL
+    raw_redirect = str(request.url_for("oauth_callback"))
+    redirect_url = URL(raw_redirect)
+    # Use forwarded proto if present
+    fproto = (request.headers.get("x-forwarded-proto") or "").lower()
+    if fproto in {"http", "https"} and redirect_url.scheme != fproto:
+        redirect_url = redirect_url.replace(scheme=fproto)
+    # Use forwarded host if present (critical for Vercel proxy setup)
+    fhost = request.headers.get("x-forwarded-host")
+    if fhost:
+        # Take the first host if multiple are comma-separated
+        fhost = fhost.split(",")[0].strip()
+        if fhost and fhost != redirect_url.netloc:
+            redirect_url = redirect_url.replace(netloc=fhost)
+    return str(redirect_url)
+
 # ---- Classic OAuth (Authorization Code) flow ----
 @app.get("/api/oauth/start")
 def oauth_start(request: Request, returnTo: Optional[str] = "/"):
     if not (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET):
         raise HTTPException(500, "Server misconfigured: missing Google OAuth credentials")
-    # Build redirect_uri and normalize scheme using X-Forwarded-Proto if present
+    # Build redirect_uri respecting proxy headers
     try:
-        from starlette.datastructures import URL  # local import to avoid global dependency if unused
-        raw_redirect = str(request.url_for("oauth_callback"))
-        redirect_url = URL(raw_redirect)
-        fproto = (request.headers.get("x-forwarded-proto") or "").lower()
-        if fproto in {"http", "https"} and redirect_url.scheme != fproto:
-            redirect_url = redirect_url.replace(scheme=fproto)
-        redirect_uri = str(redirect_url)
+        redirect_uri = build_oauth_redirect_uri(request)
     except Exception:
         redirect_uri = str(request.url_for("oauth_callback"))
     logger.info(f"OAuth START redirect_uri = {redirect_uri}")
@@ -407,15 +420,9 @@ async def oauth_callback(request: Request, response: Response, code: Optional[st
     if not cookie_state or cookie_state != (state or ""):
         raise HTTPException(400, "Invalid OAuth state")
     # Exchange code for tokens (async)
-    # Build redirect_uri and normalize scheme using X-Forwarded-Proto if present
+    # Build redirect_uri respecting proxy headers
     try:
-        from starlette.datastructures import URL  # local import to avoid global dependency if unused
-        raw_redirect = str(request.url_for("oauth_callback"))
-        redirect_url = URL(raw_redirect)
-        fproto = (request.headers.get("x-forwarded-proto") or "").lower()
-        if fproto in {"http", "https"} and redirect_url.scheme != fproto:
-            redirect_url = redirect_url.replace(scheme=fproto)
-        redirect_uri = str(redirect_url)
+        redirect_uri = build_oauth_redirect_uri(request)
     except Exception:
         redirect_uri = str(request.url_for("oauth_callback"))
     logger.info(f"OAuth CALLBACK redirect_uri = {redirect_uri}")
