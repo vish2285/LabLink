@@ -1,3 +1,6 @@
 {
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "baseline-browser-mapping": "^2.8.32"
+  }
 }

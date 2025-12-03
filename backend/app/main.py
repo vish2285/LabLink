@@ -333,11 +333,7 @@ def oauth_start(request: Request, returnTo: Optional[str] = "/"):
         redirect_uri = str(redirect_url)
     except Exception:
         redirect_uri = str(request.url_for("oauth_callback"))
-    # Debug log helps diagnose redirect_uri_mismatch issues
-    try:
-        logger.info(f"OAuth START redirect_uri = {redirect_uri}")
-    except Exception:
-        pass
+    logger.info(f"OAuth START redirect_uri = {redirect_uri}")
     state = secrets.token_urlsafe(32)
     scopes = [
         "openid",
@@ -422,11 +418,7 @@ async def oauth_callback(request: Request, response: Response, code: Optional[st
         redirect_uri = str(redirect_url)
     except Exception:
         redirect_uri = str(request.url_for("oauth_callback"))
-    # Debug log helps diagnose redirect_uri_mismatch issues
-    try:
-        logger.info(f"OAuth CALLBACK redirect_uri = {redirect_uri}")
-    except Exception:
-        pass
+    logger.info(f"OAuth CALLBACK redirect_uri = {redirect_uri}")
     data = {
         "client_id": GOOGLE_CLIENT_ID,
         "client_secret": GOOGLE_CLIENT_SECRET,
