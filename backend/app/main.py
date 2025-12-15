@@ -1,5 +1,14 @@
 # LabLink FastAPI (JSON-backed, skills-aware matching)
-from fastapi import FastAPI, Depends, HTTPException, Query, Body, Request, Response, Cookie
+from fastapi import (
+    FastAPI,
+    Depends,
+    HTTPException,
+    Query,
+    Body,
+    Request,
+    Response,
+    Cookie,
+)
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -19,12 +28,22 @@ from . import crud
 from . import models
 from .seed_json import seed_from_json  # reuse JSON seeder when available
 from .schema import (
-    ProfessorOut, StudentProfileIn,
-    MatchResponse, MatchItem, EmailRequest, EmailDraft
+    ProfessorOut,
+    StudentProfileIn,
+    MatchResponse,
+    MatchItem,
+    EmailRequest,
+    EmailDraft,
 )
 from .matching import (
-    prof_to_doc, VectorStore, extract_skills, jaccard, tokenize, norm_text,
-    expand_query_text, SemanticIndex
+    prof_to_doc,
+    VectorStore,
+    extract_skills,
+    jaccard,
+    tokenize,
+    norm_text,
+    expand_query_text,
+    SemanticIndex,
 )
 from .matching import CrossEncoderReranker
 from .email_utils import build_email, send_email_with_attachment
@@ -43,16 +62,14 @@ load_dotenv()
 # ---- Logging Setup ----
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('app.log'),
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
 # ---- Rate Limiting ----
 app = FastAPI(title="LabLink DB API", version="1.0.0")
+
 
 # ---- Performance Monitoring ----
 def monitor_performance(func):
@@ -69,12 +86,19 @@ def monitor_performance(func):
             duration = time.time() - start_time
             logger.error(f"❌ {func.__name__} failed after {duration:.2f}s: {str(e)}")
             raise
+
     return wrapper
+
+
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 ALLOWED_EMAIL_DOMAINS = [
-    d.strip().lower() for d in os.getenv("ALLOWED_EMAIL_DOMAINS", "ucdavis.edu").split(",") if d.strip()
+    d.strip().lower()
+    for d in os.getenv("ALLOWED_EMAIL_DOMAINS", "ucdavis.edu").split(",")
+    if d.strip()
 ]
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()]
+ALLOWED_HOSTS = [
+    h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()
+]
 if ALLOWED_HOSTS:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
 app.add_middleware(
@@ -111,10 +135,12 @@ COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax").lower()
 # in-memory rate limit buckets
 _EMAIL_SEND_EVENTS: dict[str, list[int]] = {}
 
+
 def verify_google_token(token: str) -> dict:
     try:
         from google.oauth2 import id_token as google_id_token  # type: ignore
         from google.auth.transport import requests as google_requests  # type: ignore
+
         req = google_requests.Request()
         claims = google_id_token.verify_oauth2_token(token, req, GOOGLE_CLIENT_ID)
         # claims must have email_verified True ideally
@@ -129,6 +155,7 @@ def verify_google_token(token: str) -> dict:
     except Exception as e:
         # Surface precise verification reason during debugging
         raise HTTPException(401, f"Invalid Google token: {e}")
+
 
 def get_current_user(
     request: Request,
@@ -160,14 +187,23 @@ def get_current_user(
                 value=sess.token,
                 httponly=True,
                 secure=COOKIE_SECURE,
-                samesite="none" if COOKIE_SAMESITE == "none" else ("strict" if COOKIE_SAMESITE == "strict" else "lax"),
+                samesite=(
+                    "none"
+                    if COOKIE_SAMESITE == "none"
+                    else ("strict" if COOKIE_SAMESITE == "strict" else "lax")
+                ),
                 domain=COOKIE_DOMAIN,
                 expires=expires.strftime("%a, %d %b %Y %H:%M:%S GMT"),
                 path="/",
             )
         except Exception:
             pass
-        return {"sub": f"session:{user.id}", "email": user.email, "name": user.name, "picture": user.picture}
+        return {
+            "sub": f"session:{user.id}",
+            "email": user.email,
+            "name": user.name,
+            "picture": user.picture,
+        }
 
     # Fallback legacy Bearer Google ID token
     if credentials is None or credentials.scheme.lower() != "bearer":
@@ -175,26 +211,33 @@ def get_current_user(
     token = credentials.credentials
     return verify_google_token(token)
 
-def require_ucdavis_user(user: dict = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
+
+def require_ucdavis_user(
+    user: dict = Depends(get_current_user), db: Session = Depends(get_db)
+) -> dict:
     email = str(user.get("email") or "")
     domain = email.split("@", 1)[-1].lower() if "@" in email else None
     hd = str(user.get("hd") or "").lower() or None
     allowed = set(ALLOWED_EMAIL_DOMAINS)
     if (domain not in allowed) and (hd not in allowed):
-        raise HTTPException(403, f"Email domain not allowed. Allowed: {', '.join(sorted(allowed))}")
+        raise HTTPException(
+            403, f"Email domain not allowed. Allowed: {', '.join(sorted(allowed))}"
+        )
     # Upsert user record by Google sub
     try:
         sub = str(user.get("sub"))
         name = user.get("name")
         picture = user.get("picture")
         if sub:
-            crud.get_or_create_user_by_sub(db, sub, email=email, name=name, picture=picture)
+            crud.get_or_create_user_by_sub(
+                db, sub, email=email, name=name, picture=picture
+            )
     except Exception:
         pass
     return user
 
 
- # Removed legacy /api/auth/google since we verify tokens per request
+# Removed legacy /api/auth/google since we verify tokens per request
 
 
 # ---- DB init (no Alembic for MVP) ----
@@ -209,9 +252,11 @@ PROF_IDS: list[int] = []
 # Map professor id -> personal_site loaded from JSON (since not stored in DB)
 PERSONAL_SITE_MAP: dict[int, str] = {}
 
+
 def extract_publications(p) -> list[dict]:
     # Publications removed; keep stub returning empty list for compatibility
     return []
+
 
 def rebuild_vectorstore(db: Session):
     global VECSTORE, SEM_INDEX, DOCS, PROF_IDS
@@ -221,10 +266,9 @@ def rebuild_vectorstore(db: Session):
     payloads = []
     for p in profs:
         skills = [ps.skill.name for ps in p.professor_skills]
-        payloads.append({
-            "research_interests": p.research_interests or "",
-            "skills": skills
-        })
+        payloads.append(
+            {"research_interests": p.research_interests or "", "skills": skills}
+        )
     DOCS = [prof_to_doc(x) for x in payloads]
     VECSTORE = VectorStore(DOCS)
     SEM_INDEX = SemanticIndex(DOCS)
@@ -233,6 +277,7 @@ def rebuild_vectorstore(db: Session):
         RERANKER = CrossEncoderReranker()
     except Exception:
         RERANKER = None
+
 
 def load_personal_sites_from_json():
     global PERSONAL_SITE_MAP
@@ -250,7 +295,11 @@ def load_personal_sites_from_json():
                     m: dict[int, str] = {}
                     for obj in data:
                         try:
-                            pid = int(obj.get("id")) if obj.get("id") is not None else None
+                            pid = (
+                                int(obj.get("id"))
+                                if obj.get("id") is not None
+                                else None
+                            )
                             site = (obj.get("personal_site") or "").strip()
                             if pid and site:
                                 m[pid] = site
@@ -260,6 +309,7 @@ def load_personal_sites_from_json():
                 break
     except Exception:
         PERSONAL_SITE_MAP = {}
+
 
 @app.on_event("startup")
 def startup():
@@ -290,17 +340,21 @@ def startup():
                                     name = (row.get("name") or "").strip()
                                     if not name:
                                         continue
-                                    dept = (row.get("dept") or row.get("department") or "").strip()
+                                    dept = (
+                                        row.get("dept") or row.get("department") or ""
+                                    ).strip()
                                     email = (row.get("email") or "").strip()
                                     interests = (row.get("interests") or "").strip()
-                                    db.add(models.Professor(
-                                        name=name,
-                                        department=dept or None,
-                                        email=email or None,
-                                        research_interests=interests or None,
-                                        profile_link=None,
-                                        photo_url="",
-                                    ))
+                                    db.add(
+                                        models.Professor(
+                                            name=name,
+                                            department=dept or None,
+                                            email=email or None,
+                                            research_interests=interests or None,
+                                            profile_link=None,
+                                            photo_url="",
+                                        )
+                                    )
                                 db.commit()
                         except Exception:
                             db.rollback()
@@ -312,15 +366,18 @@ def startup():
         # Load personal_site map from JSON for API responses
         load_personal_sites_from_json()
 
+
 @app.get("/api/reload_docs")
 def reload_docs(db: Session = Depends(get_db)):
     rebuild_vectorstore(db)
     return {"ok": True, "count": len(PROF_IDS)}
 
+
 # ---- Helper to build OAuth redirect_uri respecting proxy headers ----
 def build_oauth_redirect_uri(request: Request) -> str:
     """Build redirect_uri for OAuth, respecting X-Forwarded-Host and X-Forwarded-Proto from proxies."""
     from starlette.datastructures import URL
+
     raw_redirect = str(request.url_for("oauth_callback"))
     redirect_url = URL(raw_redirect)
     # Use forwarded proto if present
@@ -336,11 +393,14 @@ def build_oauth_redirect_uri(request: Request) -> str:
             redirect_url = redirect_url.replace(netloc=fhost)
     return str(redirect_url)
 
+
 # ---- Classic OAuth (Authorization Code) flow ----
 @app.get("/api/oauth/start")
 def oauth_start(request: Request, returnTo: Optional[str] = "/"):
     if not (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET):
-        raise HTTPException(500, "Server misconfigured: missing Google OAuth credentials")
+        raise HTTPException(
+            500, "Server misconfigured: missing Google OAuth credentials"
+        )
     # Build redirect_uri respecting proxy headers
     try:
         redirect_uri = build_oauth_redirect_uri(request)
@@ -371,15 +431,25 @@ def oauth_start(request: Request, returnTo: Optional[str] = "/"):
     url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
     resp = RedirectResponse(url)
     # Store state and return path in short-lived cookies
-    resp.set_cookie("oauth_state", state, max_age=600, httponly=True, secure=COOKIE_SECURE, samesite="lax", domain=COOKIE_DOMAIN, path="/")
+    resp.set_cookie(
+        "oauth_state",
+        state,
+        max_age=600,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax",
+        domain=COOKIE_DOMAIN,
+        path="/",
+    )
     # Allow absolute returnTo only if it matches an allowed origin; else allow app-relative path
     safe_return = "/"
     try:
         if isinstance(returnTo, str) and returnTo:
             if returnTo.startswith("http://") or returnTo.startswith("https://"):
-                allowed = {o.strip().rstrip('/') for o in ALLOWED_ORIGINS if o.strip()}
+                allowed = {o.strip().rstrip("/") for o in ALLOWED_ORIGINS if o.strip()}
                 # extract origin
                 from urllib.parse import urlsplit
+
                 rt = urlsplit(returnTo)
                 origin = f"{rt.scheme}://{rt.netloc}"
                 if origin in allowed:
@@ -388,10 +458,21 @@ def oauth_start(request: Request, returnTo: Optional[str] = "/"):
                 safe_return = returnTo
     except Exception:
         safe_return = "/"
-    resp.set_cookie("oauth_return", safe_return, max_age=600, httponly=True, secure=COOKIE_SECURE, samesite="lax", domain=COOKIE_DOMAIN, path="/")
+    resp.set_cookie(
+        "oauth_return",
+        safe_return,
+        max_age=600,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax",
+        domain=COOKIE_DOMAIN,
+        path="/",
+    )
     return resp
 
+
 # ---- Cookie helper ----
+
 
 def set_session_cookie(resp: Response | RedirectResponse, token: str) -> None:
     try:
@@ -401,7 +482,11 @@ def set_session_cookie(resp: Response | RedirectResponse, token: str) -> None:
             value=token,
             httponly=True,
             secure=COOKIE_SECURE,
-            samesite="none" if COOKIE_SAMESITE == "none" else ("strict" if COOKIE_SAMESITE == "strict" else "lax"),
+            samesite=(
+                "none"
+                if COOKIE_SAMESITE == "none"
+                else ("strict" if COOKIE_SAMESITE == "strict" else "lax")
+            ),
             domain=COOKIE_DOMAIN,
             expires=expires.strftime("%a, %d %b %Y %H:%M:%S GMT"),
             path="/",
@@ -409,8 +494,16 @@ def set_session_cookie(resp: Response | RedirectResponse, token: str) -> None:
     except Exception:
         pass
 
+
 @app.get("/api/oauth/callback")
-async def oauth_callback(request: Request, response: Response, code: Optional[str] = None, state: Optional[str] = None, error: Optional[str] = None, db: Session = Depends(get_db)):
+async def oauth_callback(
+    request: Request,
+    response: Response,
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
     if error:
         raise HTTPException(400, f"OAuth error: {error}")
     if not code:
@@ -435,7 +528,9 @@ async def oauth_callback(request: Request, response: Response, code: Optional[st
     }
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            token_res = await client.post("https://oauth2.googleapis.com/token", data=data)
+            token_res = await client.post(
+                "https://oauth2.googleapis.com/token", data=data
+            )
         token_res.raise_for_status()
         payload = token_res.json()
         id_token = payload.get("id_token")
@@ -453,7 +548,9 @@ async def oauth_callback(request: Request, response: Response, code: Optional[st
         allowed = set(ALLOWED_EMAIL_DOMAINS)
         if (domain not in allowed) and (hd not in allowed):
             raise HTTPException(403, "Email domain not allowed")
-        user = crud.get_or_create_user_by_sub(db, sub, email=email, name=name, picture=picture)
+        user = crud.get_or_create_user_by_sub(
+            db, sub, email=email, name=name, picture=picture
+        )
         sess = crud.create_session(db, user, ttl_seconds=SESSION_TTL_SECONDS)
     except HTTPException:
         raise
@@ -471,32 +568,44 @@ async def oauth_callback(request: Request, response: Response, code: Optional[st
         pass
     return r
 
+
 # ---- Helpers ----
-def clamp01(x: float) -> float: return max(0.0, min(1.0, x))
-def pct(x: float) -> float: return round(clamp01(x) * 100.0, 2)
+def clamp01(x: float) -> float:
+    return max(0.0, min(1.0, x))
+
+
+def pct(x: float) -> float:
+    return round(clamp01(x) * 100.0, 2)
+
 
 def to_prof_out(p) -> ProfessorOut:
     skills = [ps.skill.name for ps in p.professor_skills]
     # Prefer explicit personal_site; fall back only to JSON map (do not use profile_link)
-    _personal_site = (
-        getattr(p, 'personal_site', '') or
-        PERSONAL_SITE_MAP.get(p.id, '')
-    )
+    _personal_site = getattr(p, "personal_site", "") or PERSONAL_SITE_MAP.get(p.id, "")
     return ProfessorOut(
-        id=p.id, name=p.name, department=p.department, email=p.email,
-        research_interests=p.research_interests, profile_link=p.profile_link,
+        id=p.id,
+        name=p.name,
+        department=p.department,
+        email=p.email,
+        research_interests=p.research_interests,
+        profile_link=p.profile_link,
         personal_site=_personal_site,
-        photo_url=getattr(p, 'photo_url', ''),
-        skills=skills
+        photo_url=getattr(p, "photo_url", ""),
+        skills=skills,
     )
+
 
 # ---- Routes ----
 @app.get("/health")
-def health(): return {"ok": True}
+def health():
+    return {"ok": True}
+
 
 # Alias for frontend proxy that rewrites /api/* to the backend
 @app.get("/api/health")
-def api_health(): return {"ok": True}
+def api_health():
+    return {"ok": True}
+
 
 # ---- Security headers ----
 @app.middleware("http")
@@ -505,7 +614,9 @@ async def add_security_headers(request: Request, call_next):
     try:
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
         resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        resp.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+        resp.headers.setdefault(
+            "Permissions-Policy", "geolocation=(), microphone=(), camera=()"
+        )
         # Disallow embedding API responses in iframes to mitigate clickjacking
         resp.headers.setdefault("X-Frame-Options", "DENY")
         # Conservative CSP for API responses
@@ -514,14 +625,22 @@ async def add_security_headers(request: Request, call_next):
             "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
         )
         if str(os.getenv("HSTS_ENABLED", "1")).lower() in {"1", "true", "yes"}:
-            resp.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
+            resp.headers.setdefault(
+                "Strict-Transport-Security",
+                "max-age=63072000; includeSubDomains; preload",
+            )
     except Exception:
         pass
     return resp
 
+
 # ---- Cookie-based auth endpoints ----
 @app.post("/api/auth/login")
-def auth_login(id_token: str = Body(..., embed=True), response: Response = None, db: Session = Depends(get_db)):
+def auth_login(
+    id_token: str = Body(..., embed=True),
+    response: Response = None,
+    db: Session = Depends(get_db),
+):
     if not GOOGLE_CLIENT_ID:
         raise HTTPException(500, "Server misconfigured")
     claims = verify_google_token(id_token)
@@ -536,7 +655,9 @@ def auth_login(id_token: str = Body(..., embed=True), response: Response = None,
     allowed = set(ALLOWED_EMAIL_DOMAINS)
     if (domain not in allowed) and (hd not in allowed):
         raise HTTPException(403, "Email domain not allowed")
-    user = crud.get_or_create_user_by_sub(db, sub, email=email, name=name, picture=picture)
+    user = crud.get_or_create_user_by_sub(
+        db, sub, email=email, name=name, picture=picture
+    )
     sess = crud.create_session(db, user, ttl_seconds=SESSION_TTL_SECONDS)
     if response is None:
         response = Response()
@@ -546,22 +667,38 @@ def auth_login(id_token: str = Body(..., embed=True), response: Response = None,
         value=sess.token,
         httponly=True,
         secure=COOKIE_SECURE,
-        samesite="none" if COOKIE_SAMESITE == "none" else ("strict" if COOKIE_SAMESITE == "strict" else "lax"),
+        samesite=(
+            "none"
+            if COOKIE_SAMESITE == "none"
+            else ("strict" if COOKIE_SAMESITE == "strict" else "lax")
+        ),
         domain=COOKIE_DOMAIN,
         expires=expires.strftime("%a, %d %b %Y %H:%M:%S GMT"),
         path="/",
     )
-    return {"ok": True, "user": {"email": user.email, "name": user.name, "picture": user.picture}}
+    return {
+        "ok": True,
+        "user": {"email": user.email, "name": user.name, "picture": user.picture},
+    }
+
 
 @app.post("/api/auth/logout")
-def auth_logout(response: Response, db: Session = Depends(get_db), session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME)):
+def auth_logout(
+    response: Response,
+    db: Session = Depends(get_db),
+    session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME),
+):
     if not session_token:
         # no session to clear
         response.delete_cookie(
             key=SESSION_COOKIE_NAME,
             httponly=True,
             secure=COOKIE_SECURE,
-            samesite="none" if COOKIE_SAMESITE == "none" else ("strict" if COOKIE_SAMESITE == "strict" else "lax"),
+            samesite=(
+                "none"
+                if COOKIE_SAMESITE == "none"
+                else ("strict" if COOKIE_SAMESITE == "strict" else "lax")
+            ),
             domain=COOKIE_DOMAIN,
             path="/",
         )
@@ -574,14 +711,23 @@ def auth_logout(response: Response, db: Session = Depends(get_db), session_token
         key=SESSION_COOKIE_NAME,
         httponly=True,
         secure=COOKIE_SECURE,
-        samesite="none" if COOKIE_SAMESITE == "none" else ("strict" if COOKIE_SAMESITE == "strict" else "lax"),
+        samesite=(
+            "none"
+            if COOKIE_SAMESITE == "none"
+            else ("strict" if COOKIE_SAMESITE == "strict" else "lax")
+        ),
         domain=COOKIE_DOMAIN,
         path="/",
     )
     return {"ok": True}
 
+
 @app.post("/api/auth/refresh")
-def auth_refresh(response: Response, db: Session = Depends(get_db), session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME)):
+def auth_refresh(
+    response: Response,
+    db: Session = Depends(get_db),
+    session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME),
+):
     if not session_token:
         raise HTTPException(401, "Missing session")
     sess = crud.get_session(db, session_token)
@@ -597,26 +743,38 @@ def auth_refresh(response: Response, db: Session = Depends(get_db), session_toke
     set_session_cookie(r, sess.token)
     return r
 
+
 @app.get("/api/auth/me")
 def auth_me(user: dict = Depends(get_current_user)):
     # Accept either cookie session or Bearer token (handled in get_current_user)
-    return {"email": user.get("email"), "name": user.get("name"), "picture": user.get("picture")}
+    return {
+        "email": user.get("email"),
+        "name": user.get("name"),
+        "picture": user.get("picture"),
+    }
+
 
 @app.get("/api/professors", response_model=list[ProfessorOut])
-def list_professors(department: str | None = Query(None), db: Session = Depends(get_db)):
+def list_professors(
+    department: str | None = Query(None), db: Session = Depends(get_db)
+):
     profs = crud.list_professors(db, department)
     return [to_prof_out(p) for p in profs]
+
 
 @app.get("/api/professors/{professor_id}", response_model=ProfessorOut)
 def get_professor(professor_id: int, db: Session = Depends(get_db)):
     p = crud.get_professor(db, professor_id)
-    if not p: raise HTTPException(404, "Professor not found")
+    if not p:
+        raise HTTPException(404, "Professor not found")
     return to_prof_out(p)
+
 
 @app.get("/api/departments", response_model=list[str])
 def list_departments(db: Session = Depends(get_db)):
     deps = crud.list_departments(db)
     return deps
+
 
 # ---- Matching endpoints ----
 @app.post("/api/match", response_model=MatchResponse)
@@ -627,7 +785,9 @@ def match_professors(
 ):
     query_text = norm_text((profile.interests or ""))
 
-    profs = crud.list_professors(db=next(get_db()), department_substr=department or None)
+    profs = crud.list_professors(
+        db=next(get_db()), department_substr=department or None
+    )
 
     # fixed weights (request does not carry weights)
     w_interests = 0.6
@@ -683,7 +843,7 @@ def match_professors(
         why = {
             "interests_hits": interest_hits,
             "skills_hits": skill_hits[:6],
-            "pubs_hits": []
+            "pubs_hits": [],
         }
         scored.append((final, len(skill_hits), -p.id, p, why))
 
@@ -695,7 +855,7 @@ def match_professors(
     prelim = prelim[:100] if prelim else []
 
     # Optional cross-encoder rerank of prelim set using concatenated doc text
-    if RERANKER is not None and getattr(RERANKER, 'available', False) and prelim:
+    if RERANKER is not None and getattr(RERANKER, "available", False) and prelim:
         doc_texts = []
         for _, __, ___, p, ____ in prelim:
             # Build a more descriptive doc for reranking
@@ -731,7 +891,11 @@ def match_professors(
                 rec = inter / len(A) if A else 0.0
                 f1 = (2 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
                 s = clamp01(f1 * 0.8 + jac * 0.2)
-                why = {"interests_hits": [], "skills_hits": skill_hits[:6], "pubs_hits": []}
+                why = {
+                    "interests_hits": [],
+                    "skills_hits": skill_hits[:6],
+                    "pubs_hits": [],
+                }
             else:
                 # Otherwise suggest by general coverage of interests text length
                 tokens = tokenize(p.research_interests or "")
@@ -745,19 +909,22 @@ def match_professors(
 
     matches = []
     for final, _, __, p, why in selected:
-        matches.append(MatchItem(
-            score=round(final, 6),
-            score_percent=pct(final),
-            why=why,
-            professor=to_prof_out(p)
-        ))
+        matches.append(
+            MatchItem(
+                score=round(final, 6),
+                score_percent=pct(final),
+                why=why,
+                professor=to_prof_out(p),
+            )
+        )
 
     return MatchResponse(
         student_query=query_text,
         department=department or "",
         weights={"interests": w_interests, "skills": w_skills, "pubs": w_pubs},
-        matches=matches
+        matches=matches,
     )
+
 
 @app.post("/api/email/generate", response_model=EmailDraft)
 def email_generate(req: EmailRequest, user: dict = Depends(require_ucdavis_user)):
@@ -771,6 +938,7 @@ def email_generate(req: EmailRequest, user: dict = Depends(require_ucdavis_user)
         student_level=req.student_level,
     )
     return EmailDraft(**draft)
+
 
 @app.post("/api/email/send")
 def email_send(
@@ -812,7 +980,13 @@ def email_send(
 
     # Send (mock or real)
     try:
-        send_email_with_attachment(to=to, subject=subject, body=body, filename=filename, file_b64=file_b64)
+        send_email_with_attachment(
+            to_email=to,
+            subject=subject,
+            body=body,
+            attachment_filename=filename,
+            attachment_bytes=file_b64,
+        )
     except Exception as e:
         raise HTTPException(500, f"Failed to send email: {e}")
 
@@ -828,9 +1002,12 @@ def scrape_photo(url: str, user: dict = Depends(require_ucdavis_user)):
             return {"photo_url": ""}
         allowed_hosts = {"ucdavis.edu", "cs.ucdavis.edu", "ucdavis.github.io"}
         from urllib.parse import urlparse
+
         parsed = urlparse(url)
         host = (parsed.hostname or "").lower()
-        if not host or not any(host == d or host.endswith("." + d) for d in allowed_hosts):
+        if not host or not any(
+            host == d or host.endswith("." + d) for d in allowed_hosts
+        ):
             return {"photo_url": ""}
 
         # lightweight rate limit per user/email for this endpoint (5/min)
@@ -844,9 +1021,13 @@ def scrape_photo(url: str, user: dict = Depends(require_ucdavis_user)):
         bucket.append(now)
         _EMAIL_SEND_EVENTS[key] = bucket
 
-        resp = httpx.get(url, timeout=8.0, headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-        })
+        resp = httpx.get(
+            url,
+            timeout=8.0,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+            },
+        )
         resp.raise_for_status()
         html = resp.text
 
@@ -865,24 +1046,30 @@ def scrape_photo(url: str, user: dict = Depends(require_ucdavis_user)):
                 return {"photo_url": urljoin(url, val)}
 
         # Twitter card
-        tw = find(r"<meta[^>]+name=[\'\"]twitter:image[\'\"][^>]+content=[\'\"]([^\'\"]+)[\'\"]")
+        tw = find(
+            r"<meta[^>]+name=[\'\"]twitter:image[\'\"][^>]+content=[\'\"]([^\'\"]+)[\'\"]"
+        )
         if tw:
             return {"photo_url": urljoin(url, tw)}
 
         # <link rel="image_src">
-        link_img = find(r"<link[^>]+rel=[\'\"]image_src[\'\"][^>]+href=[\'\"]([^\'\"]+)[\'\"]")
+        link_img = find(
+            r"<link[^>]+rel=[\'\"]image_src[\'\"][^>]+href=[\'\"]([^\'\"]+)[\'\"]"
+        )
         if link_img:
             return {"photo_url": urljoin(url, link_img)}
 
         # UC Davis directory profile images
-        uc_img = find(r"<img[^>]+src=[\'\"]([^\'\"]*/styles/sf_profile/public/[^\'\"]+)[\'\"][^>]*>")
+        uc_img = find(
+            r"<img[^>]+src=[\'\"]([^\'\"]*/styles/sf_profile/public/[^\'\"]+)[\'\"][^>]*>"
+        )
         if uc_img:
             return {"photo_url": urljoin(url, uc_img)}
 
         # srcset attribute
         srcset = find(r"<img[^>]+srcset=[\'\"]([^\'\"]+)[\'\"][^>]*>")
         if srcset:
-            first = srcset.split(',')[0].strip().split()[0]
+            first = srcset.split(",")[0].strip().split()[0]
             if first:
                 return {"photo_url": urljoin(url, first)}
 
@@ -894,4 +1081,3 @@ def scrape_photo(url: str, user: dict = Depends(require_ucdavis_user)):
         return {"photo_url": ""}
     except Exception:
         return {"photo_url": ""}
-
