@@ -1,9 +1,14 @@
 # LabLink 🔎🧪
 Connect UC Davis students with professors aligned to their research interests, and draft a polished outreach email in one flow.
 
+## 🎬 Demo
+
+[![LabLink Demo](https://img.youtube.com/vi/oGA9m5taJOM/0.jpg)](https://youtu.be/oGA9m5taJOM)
+
 **Live app**: `https://lablinkdavis.org` 
 
 Built with **React (Vite + TypeScript + Tailwind)** and **FastAPI + SQLAlchemy**, using **SQLite** locally and **PostgreSQL/Neon** in production. Matching blends lexical (TF‑IDF/BM25), semantic embeddings, skill overlap, and publication recency.
+
 
 ---
 
