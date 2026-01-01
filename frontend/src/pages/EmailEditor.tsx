@@ -12,6 +12,7 @@ export default function EmailEditor() {
   const { selectedProfessor, emailDraft, setEmailDraft, profile, emailSubject, setEmailSubject } = useApp() as any
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [sending, setSending] = useState(false)
   const [file, setFile] = useReactState<File | null>(null)
   const [subjectText, setSubjectText] = useState<string>(emailSubject || '')
   
@@ -117,6 +118,16 @@ export default function EmailEditor() {
                 alert('Selected professor has no valid email address.')
                 return
               }
+              if (!subjectText.trim()) {
+                alert('Please enter a subject line.')
+                return
+              }
+              if (!body.trim()) {
+                alert('Please enter an email body.')
+                return
+              }
+              
+              setSending(true)
               try {
                 let file_b64: string | undefined
                 let filename: string | undefined
@@ -135,11 +146,21 @@ export default function EmailEditor() {
                   setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300) }, 1500)
                 } catch {}
               } catch (e: any) {
-                alert(e?.message || 'Failed to send email')
+                console.error('Failed to send email:', e)
+                const errorMsg = e?.message || 'Failed to send email. Please check your connection and try again.'
+                alert(errorMsg)
+              } finally {
+                setSending(false)
               }
-            }}>
-              <FiMail className="h-4 w-4 mr-2" />
-              Send Email
+            }} disabled={sending}>
+              {sending ? (
+                <LoadingSpinner size="sm" text="Sending…" />
+              ) : (
+                <>
+                  <FiMail className="h-4 w-4 mr-2" />
+                  Send Email
+                </>
+              )}
             </Button>
             <a
               className="inline-flex items-center gap-2 h-10 whitespace-nowrap rounded-lg border border-slate-300/70 dark:border-white/20 bg-white/80 dark:bg-white/5 text-slate-700 dark:text-slate-200 px-4 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"

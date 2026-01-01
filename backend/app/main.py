@@ -980,14 +980,21 @@ def email_send(
 
     # Send (mock or real)
     try:
+        # Decode base64 string to bytes for attachment
+        attachment_data = None
+        if file_b64:
+            attachment_data = base64.b64decode(file_b64)
+
         send_email_with_attachment(
             to_email=to,
             subject=subject,
             body=body,
             attachment_filename=filename,
-            attachment_bytes=file_b64,
+            attachment_bytes=attachment_data,
         )
+        logger.info(f"Email sent successfully to {to}")
     except Exception as e:
+        logger.error(f"Failed to send email to {to}: {e}")
         raise HTTPException(500, f"Failed to send email: {e}")
 
     return {"ok": True}
